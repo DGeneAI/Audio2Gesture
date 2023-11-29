@@ -228,14 +228,17 @@ class VectorQuantizerEMA(nn.Module):
         # commitment loss  and vq loss
         e_commitment_loss = F.mse_loss(x, quantized.detach())
         e_vq_loss = F.mse_loss(x.detach(), quantized)
-        loss = self.commitment_cost * e_commitment_loss + self.vq_cost*e_vq_loss
+        # loss = self.commitment_cost * e_commitment_loss + self.vq_cost*e_vq_loss
+        loss_commit = self.commitment_cost * e_commitment_loss
+        loss_vq = self.vq_cost*e_vq_loss
+        # loss = self.commitment_cost * e_commitment_loss
         # + e_vq_loss
 
         # Straight Through Estimator
         quantized = x + (quantized - x).detach()
 
         quantized = quantized.permute(0, 2, 1).contiguous()
-        return quantized, loss
+        return quantized, loss_commit, loss_vq
 
     def get_code_indices(self, flat_x):
         # compute L2 distance

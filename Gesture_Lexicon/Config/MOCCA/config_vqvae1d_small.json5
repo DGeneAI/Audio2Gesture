@@ -5,7 +5,7 @@
     device: "cuda:0",
 
     batch_size: 3000,
-    num_epoch: 30000,
+    num_epoch: 4000,
     checkpoint_save_epoch_num: 1000,
     valid_num_epoch: 10,
 
@@ -30,12 +30,16 @@
             [87, 78, 3, 1, 0],
             [78, 60, 4, 1, 0],
             [60, 45, 3, 1, 0]
-        ]
+        ],
+        vq_config:{
+            "embedding_dim": 128,
+            "num_embeddings": 50
+        }
     },
 
     loss: {
         rot: 1.0,
-        vel: 0.0,
-        acc: 0.0,
+        vel: 10.0,
+        acc: 10.0,
     }
 }

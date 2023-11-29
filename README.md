@@ -70,7 +70,8 @@ Then, pre-process data (it will take about 30-50 minutes):
 
 ``` shell
 cd Data_Preprocessing
-python preprocess.py ./Config/Trinity/config.json5
+# python preprocess.py ./Config/Trinity/config.json5
+python preprocess.py ./Config/MOCCA/config_vae.json5
 ```
 
 #### Run

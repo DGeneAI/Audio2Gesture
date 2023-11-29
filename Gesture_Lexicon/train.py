@@ -85,7 +85,8 @@ class Trainer:
                               self.config['network']['decoder_config'])
         elif self.config['network']['name'] == 'vqvae1d':
             self.net = vqvae1d(self.config['network']['encoder_config'],
-                              self.config['network']['decoder_config'])
+                              self.config['network']['decoder_config'],
+                              self.config['network']['vq_config'])
         elif self.config['network']['name'] == 'Transformer':
             self.net = Transformer(**self.config['network']['hparams'])
 
@@ -145,7 +146,7 @@ class Trainer:
 
             self.net.train()
             
-            loss_train, loss_rot_train, loss_vel_train, loss_acc_train, loss_vae_train = 0., 0., 0., 0., 0.
+            loss_train, loss_rot_train, loss_vel_train, loss_acc_train, loss_commit_train = 0., 0., 0., 0., 0.
             counter = 0
             
             # region Data loader loop.
@@ -161,11 +162,12 @@ class Trainer:
                 # region Forward.
                 
                 self.optimizer.zero_grad()
-                loss_vae= 0
+                loss_commit= torch.tensor(0)
+                loss_vq= torch.tensor(0)
                 if self.config['network']['name'] in ['Conv1d', 'Transformer',]:
                     _, motion_block_hat = self.net(motion_block)
                 elif self.config['network']['name'] in ['vqvae1d']:
-                    loss_vae,motion_block_hat = self.net(motion_block)
+                    loss_commit,loss_vq,motion_block_hat = self.net(motion_block)
                 else:
                     raise NotImplementedError
                 
@@ -181,7 +183,7 @@ class Trainer:
                     motion_block_hat[:, :, 2:] + motion_block_hat[:, :, :-2] - 2 * motion_block_hat[:, :, 1:-1])
                 
                 loss = self.config["loss"]["rot"] * loss_rot + self.config["loss"]["vel"] * loss_vel + \
-                       self.config["loss"]["acc"] * loss_acc + loss_vae
+                       self.config["loss"]["acc"] * loss_acc + loss_commit + loss_vq
                 
                 loss.backward()
                 self.optimizer.step()
@@ -189,7 +191,8 @@ class Trainer:
                 loss_rot_train += loss_rot.item() * motion_block.shape[0] * self.config["loss"]["rot"]
                 loss_vel_train += loss_vel.item() * motion_block.shape[0] * self.config["loss"]["vel"]
                 loss_acc_train += loss_acc.item() * motion_block.shape[0] * self.config["loss"]["acc"]
-                loss_vae_train += loss_vae.item() * motion_block.shape[0] 
+                loss_commit_train += loss_commit.item() * motion_block.shape[0] 
+                loss_vq_train += loss_vq.item() * motion_block.shape[0] 
                 loss_train += loss.item() * motion_block.shape[0]
                 counter += motion_block.shape[0]
                 
@@ -212,21 +215,24 @@ class Trainer:
             loss_rot_train /= counter
             loss_vel_train /= counter
             loss_acc_train /= counter
-            loss_vae_train /= counter
+            loss_commit_train /= counter
+            loss_vq_train /= counter
             
             print('Training',
                   f'Loss: {loss_train:.5f}',
                   f'Rot Loss: {loss_rot_train:.4f} /',
                   f'Vel Loss: {loss_vel_train:.4f} /',
                   f'Acc Loss: {loss_acc_train:.4f} /',
-                  f'VAE Loss: {loss_vae_train:.4f} /',
+                  f'Comit Loss: {loss_commit_train:.4f} /',
+                  f'VQ Loss: {loss_vq_train:.4f} /',
                   )
 
             self.writer.add_scalar(tag="Loss/Train", scalar_value=loss_train, global_step=epoch)
             self.writer.add_scalar("Rot_Loss/Train", loss_rot_train, epoch)
             self.writer.add_scalar("Vel_Loss/Train", loss_vel_train, epoch)
             self.writer.add_scalar("Acc_Loss/Train", loss_acc_train, epoch)
-            self.writer.add_scalar("VAE_Loss/Train", loss_vae_train, epoch)
+            self.writer.add_scalar("Commit_Loss/Train", loss_commit_train, epoch)
+            self.writer.add_scalar("VQ_Loss/Train", loss_vq_train, epoch)
             
             # endregion
             
@@ -244,7 +250,7 @@ class Trainer:
             if epoch % valid_num_epoch == 0:
                 self.net.eval()
                 
-                loss_valid, loss_rot_valid, loss_vel_valid, loss_acc_valid,loss_vae_valid = 0., 0., 0., 0., 0.
+                loss_valid, loss_rot_valid, loss_vel_valid, loss_acc_valid,loss_commit_valid = 0., 0., 0., 0., 0.
                 counter = 0
                 
                 with torch.no_grad():
@@ -255,11 +261,12 @@ class Trainer:
                         #     _, motion_block_hat = self.net(motion_block)
                         # else:
                         #     raise NotImplementedError
-                        loss_vae= 0
+                        loss_commit= torch.tensor(0)
+                        loss_vq= torch.tensor(0)
                         if self.config['network']['name'] in ['Conv1d', 'Transformer',]:
                             _, motion_block_hat = self.net(motion_block)
                         elif self.config['network']['name'] in ['vqvae1d']:
-                            loss_vae, motion_block_hat = self.net(motion_block)
+                            loss_commit,loss_vq, motion_block_hat = self.net(motion_block)
                         else:
                             raise NotImplementedError
                         loss_rot = self.criterion(motion_block, motion_block_hat)
@@ -269,17 +276,18 @@ class Trainer:
                             motion_block[:, :, 2:] + motion_block[:, :, :-2] - 2 * motion_block[:, :, 1:-1],
                             motion_block_hat[:, :, 2:] + motion_block_hat[:, :, :-2] - 2 * motion_block_hat[:, :, 1:-1])
                         loss = self.config["loss"]["rot"] * loss_rot + self.config["loss"]["vel"] * loss_vel + \
-                               self.config["loss"]["acc"] * loss_acc +  loss_vae
+                               self.config["loss"]["acc"] * loss_acc +  loss_commit + loss_vq
 
                         loss_rot_valid += loss_rot.item() * motion_block.shape[0] * self.config["loss"]["rot"]
                         loss_vel_valid += loss_vel.item() * motion_block.shape[0] * self.config["loss"]["vel"]
                         loss_acc_valid += loss_acc.item() * motion_block.shape[0] * self.config["loss"]["acc"]
                         try:
-                            loss_vae_valid += loss_vae.item() * motion_block.shape[0] 
+                            loss_commit_valid += loss_commit.item() * motion_block.shape[0] 
+                            loss_vq_valid += loss_vq.item() * motion_block.shape[0] 
                         except:
                             import ipdb
                             ipdb.set_trace()
-                            print(loss_vae)
+                            print(loss_commit)
                         loss_valid += loss.item() * motion_block.shape[0]
                         counter += motion_block.shape[0]
                 
@@ -287,21 +295,24 @@ class Trainer:
                     loss_rot_valid /= counter
                     loss_vel_valid /= counter
                     loss_acc_valid /= counter
-                    loss_vae_valid /= counter
+                    loss_commit_valid /= counter
+                    loss_vq_valid /= counter
                 
                     print('Validation',
                           f'Loss: {loss_valid:.5f}',
                           f'Rot Loss: {loss_rot_valid:.4f} /',
                           f'Vel Loss: {loss_vel_valid:.4f} /',
                           f'Acc Loss: {loss_acc_valid:.4f} /',
-                          f'VAE Loss: {loss_vae_valid:.4f} /',
+                          f'Commit Loss: {loss_commit_valid:.4f} /',
+                          f'VQ Loss: {loss_vq_valid:.4f} /',
                           )
 
                     self.writer.add_scalar(tag="Loss/Valid", scalar_value=loss_valid, global_step=epoch)
                     self.writer.add_scalar("Rot_Loss/Valid", loss_rot_valid, epoch)
                     self.writer.add_scalar("Vel_Loss/Valid", loss_vel_valid, epoch)
                     self.writer.add_scalar("Acc_Loss/Valid", loss_acc_valid, epoch)
-                    self.writer.add_scalar("VAE_Loss/Valid", loss_vae_valid, epoch)
+                    self.writer.add_scalar("Commit_Loss/Valid", loss_commit_valid, epoch)
+                    self.writer.add_scalar("VQ_Loss/Valid", loss_vq_valid, epoch)
             
             # endregion
             

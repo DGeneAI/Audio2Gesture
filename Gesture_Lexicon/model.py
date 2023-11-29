@@ -65,19 +65,20 @@ class vqvae1d(nn.Module):
     
     def __init__(self, 
                  encoder_config : List[List[int]], 
-                 decoder_config : List[List[int]]) -> None:
+                 decoder_config : List[List[int]],
+                 vq_config: dict) -> None:
         super().__init__()
-        embedding_dim,num_embeddings = 192,50
-        self.embeddiQng_dim = embedding_dim
-        self.num_embeddings = num_embeddings
-        commitment_cost=1.0
-        vq_cost = 0.0
+        # embedding_dim,num_embeddings = 192,50
+        self.embedding_dim = vq_config["embedding_dim"]
+        self.num_embeddings = vq_config["num_embeddings"]
+        commitment_cost=0.001
+        vq_cost = 0.001
         decay=0.99
 
         
-        self.encoder = vqvae1d_encoder(encoder_config,embedding_dim)
-        self.vq_layer = VectorQuantizerEMA(embedding_dim, num_embeddings, commitment_cost, vq_cost,decay)
-        self.decoder = vqvae1d_decoder(decoder_config,embedding_dim)
+        self.encoder = vqvae1d_encoder(encoder_config,self.embedding_dim)
+        self.vq_layer = VectorQuantizerEMA(self.embedding_dim,self.num_embeddings, commitment_cost, vq_cost,decay)
+        self.decoder = vqvae1d_decoder(decoder_config,self.embedding_dim)
         
         self.apply(self._init_weights)
 
@@ -97,9 +98,9 @@ class vqvae1d(nn.Module):
         """
         
         z = self.encoder(x)
-        e, e_loss = self.vq_layer(z)
+        e,  loss_commit, loss_vq = self.vq_layer(z)
         gt_recon= self.decoder(e)
-        return  e_loss, gt_recon
+        return  loss_commit, loss_vq, gt_recon
 
 
 class Conv1d(nn.Module):
