@@ -146,7 +146,7 @@ class Trainer:
 
             self.net.train()
             
-            loss_train, loss_rot_train, loss_vel_train, loss_acc_train, loss_commit_train = 0., 0., 0., 0., 0.
+            loss_train, loss_rot_train, loss_vel_train, loss_acc_train, loss_commit_train,  loss_vq_train= 0., 0., 0., 0., 0., 0.
             counter = 0
             
             # region Data loader loop.
@@ -250,7 +250,7 @@ class Trainer:
             if epoch % valid_num_epoch == 0:
                 self.net.eval()
                 
-                loss_valid, loss_rot_valid, loss_vel_valid, loss_acc_valid,loss_commit_valid = 0., 0., 0., 0., 0.
+                loss_valid, loss_rot_valid, loss_vel_valid, loss_acc_valid,loss_commit_valid, loss_vq_valid= 0., 0., 0., 0., 0., 0.
                 counter = 0
                 
                 with torch.no_grad():
