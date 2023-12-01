@@ -18,7 +18,7 @@
     },
 
     network: {
-        name: "vqvae1d",
+        name: "VQVAE",
         encoder_config: [
             [45, 64, 3, 1, 1],
             [64, 128, 4, 2, 1],

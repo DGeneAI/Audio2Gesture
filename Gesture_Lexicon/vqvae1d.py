@@ -3,11 +3,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import datasets, transforms
-import matplotlib.pyplot as plt
-
-
-
 class ConvNormRelu(nn.Module):
     '''
     (B,C_in,H,W) -> (B, C_out, H, W)
@@ -90,9 +85,9 @@ class ConvNormRelu(nn.Module):
 
     def forward(self, x, **kwargs):
         out = self.norm(self.dropout(self.conv(x)))
-        # if self.residual:
-        #     residual = self.residual_layer(x)
-        #     out += residual
+        if self.residual:
+            residual = self.residual_layer(x)
+            out += residual
         return self.relu(out)
 
 
@@ -178,13 +173,12 @@ class VectorQuantizerEMA(nn.Module):
         epsilon (float): small float constant to avoid numerical instability.
     """
 
-    def __init__(self, embedding_dim, num_embeddings, commitment_cost, vq_cost,decay,
+    def __init__(self, embedding_dim, num_embeddings, commitment_cost, decay,
                  epsilon=1e-5):
         super().__init__()
         self.embedding_dim = embedding_dim
         self.num_embeddings = num_embeddings
         self.commitment_cost = commitment_cost
-        self.vq_cost = vq_cost
         self.epsilon = epsilon
 
         # initialize embeddings as buffers
@@ -197,21 +191,18 @@ class VectorQuantizerEMA(nn.Module):
         self.ema_cluster_size = ExponentialMovingAverage(torch.zeros((self.num_embeddings,)), decay)
 
     def forward(self, x):
-        
         # [B, C, H, W] -> [B, H, W, C]
         x = x.permute(0, 2, 1).contiguous()
         # [B, H, W, C] -> [BHW, C]
-        # [B,96,10]
         flat_x = x.reshape(-1, self.embedding_dim)
 
         encoding_indices = self.get_code_indices(flat_x)
-        # print(encoding_indices)
         quantized = self.quantize(encoding_indices)
         quantized = quantized.view_as(x)  # [B, W, C]
 
-        # if not self.training:
-        #     quantized = quantized.permute(0, 2, 1).contiguous()
-        #     return quantized, encoding_indices.view(quantized.shape[0], quantized.shape[2])
+        if not self.training:
+            quantized = quantized.permute(0, 2, 1).contiguous()
+            return quantized, encoding_indices.view(quantized.shape[0], quantized.shape[2])
 
         # update embeddings with EMA
         with torch.no_grad():
@@ -226,20 +217,15 @@ class VectorQuantizerEMA(nn.Module):
                     updated_ema_dw / updated_ema_cluster_size.reshape(-1, 1))
             self.embeddings.data = normalised_updated_ema_w
 
-        # commitment loss  and vq loss
-        e_commitment_loss = F.mse_loss(x, quantized.detach())
-        e_vq_loss = F.mse_loss(x.detach(), quantized)
-        # loss = self.commitment_cost * e_commitment_loss + self.vq_cost*e_vq_loss
-        loss_commit = self.commitment_cost * e_commitment_loss
-        loss_vq = self.vq_cost*e_vq_loss
-        # loss = self.commitment_cost * e_commitment_loss
-        # + e_vq_loss
+        # commitment loss
+        e_latent_loss = F.mse_loss(x, quantized.detach())
+        loss = self.commitment_cost * e_latent_loss
 
         # Straight Through Estimator
         quantized = x + (quantized - x).detach()
 
         quantized = quantized.permute(0, 2, 1).contiguous()
-        return quantized, loss_commit, loss_vq
+        return quantized, loss
 
     def get_code_indices(self, flat_x):
         # compute L2 distance
@@ -254,6 +240,150 @@ class VectorQuantizerEMA(nn.Module):
     def quantize(self, encoding_indices):
         """Returns embedding tensor for a batch of indices."""
         return F.embedding(encoding_indices, self.embeddings)
+class Encoder(nn.Module):
+    def __init__(self, in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens):
+        super(Encoder, self).__init__()
+        self._num_hiddens = num_hiddens
+        self._num_residual_layers = num_residual_layers
+        self._num_residual_hiddens = num_residual_hiddens
+
+        self.project = ConvNormRelu(in_dim, self._num_hiddens // 4, leaky=True)
+
+        self._enc_1 = Res_CNR_Stack(self._num_hiddens // 4, self._num_residual_layers, leaky=True)
+        self._down_1 = ConvNormRelu(self._num_hiddens // 4, self._num_hiddens // 2, leaky=True, residual=True,
+                                    sample='down')
+        self._enc_2 = Res_CNR_Stack(self._num_hiddens // 2, self._num_residual_layers, leaky=True)
+        self._down_2 = ConvNormRelu(self._num_hiddens // 2, self._num_hiddens, leaky=True, residual=True, sample='down')
+        self._enc_3 = Res_CNR_Stack(self._num_hiddens, self._num_residual_layers, leaky=True)
+
+        self.pre_vq_conv = nn.Conv1d(self._num_hiddens, embedding_dim, 1, 1)
+
+    def forward(self, x):
+        h = self.project(x)
+        h = self._enc_1(h)
+        h = self._down_1(h)
+        h = self._enc_2(h)
+        h = self._down_2(h)
+        h = self._enc_3(h)
+        h = self.pre_vq_conv(h)
+        return h
+
+
+class Frame_Enc(nn.Module):
+    def __init__(self, in_dim, num_hiddens):
+        super(Frame_Enc, self).__init__()
+        self.in_dim = in_dim
+        self.num_hiddens = num_hiddens
+
+        # self.enc = transformer_Enc(in_dim, num_hiddens, 2, 8, 256, 256, 256, 256, 0, dropout=0.1, n_position=4)
+        self.proj = nn.Conv1d(in_dim, num_hiddens, 1, 1)
+        self.enc = Res_CNR_Stack(num_hiddens, 2, leaky=True)
+        self.proj_1 = nn.Conv1d(256*4, num_hiddens, 1, 1)
+        self.proj_2 = nn.Conv1d(256*4, num_hiddens*2, 1, 1)
+
+    def forward(self, x):
+        # x = self.enc(x, None)[0].reshape(x.shape[0], -1, 1)
+        x = self.enc(self.proj(x)).reshape(x.shape[0], -1, 1)
+        second_last = self.proj_2(x)
+        last = self.proj_1(x)
+        return second_last, last
 
 
 
+class Decoder(nn.Module):
+    def __init__(self, out_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens, ae=False):
+        super(Decoder, self).__init__()
+        self._num_hiddens = num_hiddens
+        self._num_residual_layers = num_residual_layers
+        self._num_residual_hiddens = num_residual_hiddens
+
+        self.aft_vq_conv = nn.Conv1d(embedding_dim, self._num_hiddens, 1, 1)
+
+        self._dec_1 = Res_CNR_Stack(self._num_hiddens, self._num_residual_layers, leaky=True)
+        self._up_2 = ConvNormRelu(self._num_hiddens, self._num_hiddens // 2, leaky=True, residual=True, sample='up')
+        self._dec_2 = Res_CNR_Stack(self._num_hiddens // 2, self._num_residual_layers, leaky=True)
+        self._up_3 = ConvNormRelu(self._num_hiddens // 2, self._num_hiddens // 4, leaky=True, residual=True,
+                                  sample='up')
+        self._dec_3 = Res_CNR_Stack(self._num_hiddens // 4, self._num_residual_layers, leaky=True)
+
+        if ae:
+            self.frame_enc = Frame_Enc(out_dim, self._num_hiddens // 4)
+            self.gru_sl = nn.GRU(self._num_hiddens // 2, self._num_hiddens // 2, 1, batch_first=True)
+            self.gru_l = nn.GRU(self._num_hiddens // 4, self._num_hiddens // 4, 1, batch_first=True)
+
+        self.project = nn.Conv1d(self._num_hiddens // 4, out_dim, 1, 1)
+
+    def forward(self, h, last_frame=None):
+
+        h = self.aft_vq_conv(h)
+        h = self._dec_1(h)
+        h = self._up_2(h)
+        h = self._dec_2(h)
+        h = self._up_3(h)
+        h = self._dec_3(h)
+
+        recon = self.project(h)
+        return recon, None
+
+
+class Pre_VQ(nn.Module):
+    def __init__(self, num_hiddens, embedding_dim, num_chunks):
+        super(Pre_VQ, self).__init__()
+        self.conv = nn.Conv1d(num_hiddens, num_hiddens, 1, 1, 0, groups=num_chunks)
+        self.bn = nn.GroupNorm(num_chunks, num_hiddens)
+        self.relu = nn.ReLU()
+        self.proj = nn.Conv1d(num_hiddens, embedding_dim, 1, 1, 0, groups=num_chunks)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.relu(x)
+        x = self.proj(x)
+        return x
+
+
+class VQVAE(nn.Module):
+    """VQ-VAE"""
+
+    def __init__(self, in_dim=45, embedding_dim=64, num_embeddings=2048,
+                 num_hiddens=1024, num_residual_layers=2, num_residual_hiddens=512,
+                 commitment_cost=0.25, decay=0.99, share=False):
+        super().__init__()
+        self.in_dim = in_dim
+        self.embedding_dim = embedding_dim
+        self.num_embeddings = num_embeddings
+        self.share_code_vq = share
+
+        self.encoder = Encoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens)
+        self.vq_layer = VectorQuantizerEMA(embedding_dim, num_embeddings, commitment_cost, decay)
+        self.decoder = Decoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens)
+
+    def forward(self, gt_poses, id=None, pre_state=None):
+        z = self.encoder(gt_poses)
+        if not self.training:
+            e, _ = self.vq_layer(z)
+            x_recon, cur_state = self.decoder(e, pre_state.transpose(1, 2) if pre_state is not None else None)
+            return e, x_recon
+
+        e, e_q_loss = self.vq_layer(z)
+        gt_recon, cur_state = self.decoder(e, pre_state.transpose(1, 2) if pre_state is not None else None)
+
+        return e_q_loss, gt_recon
+    def encode(self, gt_poses, id=None):
+        z = self.encoder(gt_poses.transpose(1, 2))
+        e, latents = self.vq_layer(z)
+        return e, latents
+
+    def decode(self, b, w, e=None, latents=None, pre_state=None):
+        if e is not None:
+            x = self.decodder(e, pre_state.transpose(1, 2) if pre_state is not None else None)
+        else:
+            e = self.vq_layer.quantize(latents)
+            e = e.view(b, w, -1).permute(0, 2, 1).contiguous()
+            x = self.decoder(e, pre_state.transpose(1, 2) if pre_state is not None else None)
+        return x
+
+
+x = torch.randn((5, 20, 45))
+net = VQVAE()
+e_q_loss, gt_recon = net(x)
