@@ -1,0 +1,42 @@
+[33mcommit 3816326cdbb12fcc9dd3b7ee9a39c47c8c5268ea[m[33m ([m[1;35mrefs/stash[m[33m)[m
+Merge: b1ee13f 8989652
+Author: Ironieser <Ironieser@gmail.com>
+Date:   Mon Dec 4 16:44:31 2023 +0800
+
+    WIP on vae: b1ee13f add train
+
+[33mcommit 8989652087826308ef57ae52d53f35a8eaa95a96[m
+Author: Ironieser <Ironieser@gmail.com>
+Date:   Mon Dec 4 16:44:31 2023 +0800
+
+    index on vae: b1ee13f add train
+
+[33mcommit 9c2f8a37c5e5bf9b4c0d15d5203e0a85b8f1a9b4[m[33m ([m[1;36mHEAD[m[33m)[m
+Author: Ironieser <Ironieser@gmail.com>
+Date:   Fri Dec 1 15:44:35 2023 +0800
+
+    update vqvae
+
+[33mcommit d0be3c5c70bbb53eeee2b54814587f14510ee5d9[m
+Author: Ironieser <Ironieser@gmail.com>
+Date:   Fri Dec 1 15:44:19 2023 +0800
+
+    update vqvae
+
+[33mcommit b1ee13fec1492219a581ddd05ea756b5a4f36bf8[m[33m ([m[1;31mmain/vae[m[33m, [m[1;32mvae[m[33m)[m
+Author: Ironieser <Ironieser@gmail.com>
+Date:   Wed Nov 29 19:33:58 2023 +0800
+
+    add train
+
+[33mcommit 9a6b5816c42b726b60f4855b1591a5b78bbd5dde[m[33m ([m[1;32mmain[m[33m)[m
+Author: Ironieser <Ironieser@gmail.com>
+Date:   Wed Nov 29 15:16:29 2023 +0800
+
+    init
+
+[33mcommit 241c065818a5d90a15f1a26fc18101e2936ee0e6[m[33m ([m[1;31mmain/main[m[33m)[m
+Author: Ironieser <32543247+Ironieser@users.noreply.github.com>
+Date:   Wed Nov 29 14:39:33 2023 +0800
+
+    Initial commit

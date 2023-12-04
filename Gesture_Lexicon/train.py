@@ -119,7 +119,7 @@ class Trainer:
         
         # region Criterion.
         
-        self.criterion = torch.nn.L1Loss()
+        self.criterion = torch.nn.SmoothL1Loss()
         # self.criterion = torch.nn.MSELoss()
         
         # endregion
