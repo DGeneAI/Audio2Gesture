@@ -16,8 +16,8 @@ class TrainingDataset(Dataset):
         
         data = np.load(path_data)
         
-        self.motion_feat = data["motion"].astype(np.float32)  # num_clips X time X dim_feat.
-        self.index = data["index"].astype(int)  # num_clips X num_blocks.
+        self.motion_feat = data["motion"].astype(np.float32)  # num_clips X time X dim_feat. (44750,100,45)
+        self.index = data["index"].astype(int)  # num_clips X num_blocks.  (44750,10,45)
         
         self.motion_block = np.concatenate(np.split(self.motion_feat, self.index.shape[1], axis=1), axis=0)
         self.motion_block = np.transpose(self.motion_block, (0, 2, 1))  # (num_clips*num_blocks) X dim_feat X time.

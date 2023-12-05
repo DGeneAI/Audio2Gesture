@@ -141,7 +141,7 @@ class ConvNormRelu(nn.Module):
         else:
             kernel_size = 4
             stride = 2
-
+            
         if self.residual:
             if sample == 'down':
                 self.residual_layer = nn.Conv1d(
@@ -453,14 +453,14 @@ class Pre_VQ(nn.Module):
 class vqvae1d(nn.Module):
     """VQ-VAE"""
 
-    def __init__(self, encoder_config, decoder_config,vq_config, in_dim=45, embedding_dim=64, num_embeddings=1024,
-                 num_hiddens=1024, num_residual_layers=2, num_residual_hiddens=512,
-                 commitment_cost=0.25,vq_cost=1, decay=0.99, share=False):
+    def __init__(self, encoder_config, decoder_config,vq_config, in_dim=45, 
+                 
+                #  embedding_dim=64, num_embeddings=1024,
+                #  num_hiddens=1024, num_residual_layers=2, num_residual_hiddens=512,
+                #  commitment_cost=0.25,vq_cost=1, 
+                 decay=0.99, share=False):
         super().__init__()
-        self.in_dim = in_dim
-        self.embedding_dim = embedding_dim
-        self.num_embeddings = num_embeddings
-        self.share_code_vq = share
+        self.in_dim = vq_config["in_dim"]
         embedding_dim= vq_config['embedding_dim']
         num_embeddings= vq_config['num_embeddings']
         num_hiddens= vq_config['num_hiddens']
@@ -468,7 +468,10 @@ class vqvae1d(nn.Module):
         num_residual_hiddens = vq_config['num_residual_hiddens']
         commitment_cost = vq_config['commitment_cost']
         vq_cost = vq_config['vq_cost']
-
+        
+        self.embedding_dim = embedding_dim
+        self.num_embeddings = num_embeddings
+        self.share_code_vq = share
         self.encoder = Encoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens)
         self.vq_layer = VectorQuantizerEMA(embedding_dim, num_embeddings, commitment_cost, vq_cost,decay)
         self.decoder = Decoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens)

@@ -32,8 +32,9 @@
             [64, 45, 3, 1, 1]
         ],
         vq_config:{
+            "in_dim": 45,
             "embedding_dim": 512,
-            "num_embeddings": 512,
+            "num_embeddings": 50,
 
             "num_hiddens": 1024,
 

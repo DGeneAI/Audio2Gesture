@@ -1,6 +1,6 @@
 {
     dir_data: "../Data/MOCCA/Source/Training_Data",
-    dir_save: "../Data/MOCCA/Processed_2/Training_Data",
+    dir_save: "../Data/MOCCA/Processed_4/Training_Data",
 
     name_files_train: ["speaker01_clip01", 
                         "speaker01_clip02",
@@ -50,13 +50,13 @@
     bvh_rotation_order: "ZXY",
     bvh_root_joint: "Hips", 
 
-    uniform_len: 20,
+    uniform_len: 12,
 
     use_pos_enc: false,
     dim_pos_enc : 16,
 
     split_data: true,
 
-    num_blocks_per_clip: 20,
+    num_blocks_per_clip: 10,
     step: 8
 }

@@ -28,10 +28,10 @@ __all__ = ["build_lexicon", "predict_lexeme"]
 def get_args_parser():
     parser = argparse.ArgumentParser('gesture lexicon', add_help=False)
 
-    parser.add_argument('--data_dir', type=str, required=True)
-    parser.add_argument('--checkpoint_path', type=str, required=True)
-    parser.add_argument('--checkpoint_config', type=str, required=True)
-    parser.add_argument('--lexicon_size', type=int, required=True)
+    parser.add_argument('--data_dir', type=str, default = "../Data/MOCCA/Processed/Training_Data",)
+    parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_Transformer_20231110_142117/Checkpoints/trained_model.pth",)
+    parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_Transformer_20231110_142117/config.json5")
+    parser.add_argument('--lexicon_size', type=int,default=2048)
     parser.add_argument('--num_kmeans_rerun', type=int, default=10)
     parser.add_argument('--device', type=str, default='cuda:0')
     parser.add_argument('--save', action='store_true')
