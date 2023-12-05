@@ -461,6 +461,13 @@ class vqvae1d(nn.Module):
         self.embedding_dim = embedding_dim
         self.num_embeddings = num_embeddings
         self.share_code_vq = share
+        embedding_dim= vq_config['embedding_dim']
+        num_embeddings= vq_config['num_embeddings']
+        num_hiddens= vq_config['num_hiddens']
+        num_residual_layers = vq_config['num_residual_layers']
+        num_residual_hiddens = vq_config['num_residual_hiddens']
+        commitment_cost = vq_config['commitment_cost']
+        vq_cost = vq_config['vq_cost']
 
         self.encoder = Encoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens)
         self.vq_layer = VectorQuantizerEMA(embedding_dim, num_embeddings, commitment_cost, vq_cost,decay)
