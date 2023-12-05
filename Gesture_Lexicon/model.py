@@ -141,7 +141,7 @@ class ConvNormRelu(nn.Module):
         else:
             kernel_size = 4
             stride = 2
-            
+            padding = 0
         if self.residual:
             if sample == 'down':
                 self.residual_layer = nn.Conv1d(
