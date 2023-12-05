@@ -41,7 +41,7 @@
             "num_residual_hiddens":512,
 
             "commitment_cost":0.02,
-            "vq_cost":0,
+            "vq_cost":1,
         }
     },
 

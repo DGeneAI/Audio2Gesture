@@ -455,7 +455,7 @@ class vqvae1d(nn.Module):
 
     def __init__(self, encoder_config, decoder_config,vq_config, in_dim=45, embedding_dim=64, num_embeddings=1024,
                  num_hiddens=1024, num_residual_layers=2, num_residual_hiddens=512,
-                 commitment_cost=0.25,vq_cost=0, decay=0.99, share=False):
+                 commitment_cost=0.25,vq_cost=1, decay=0.99, share=False):
         super().__init__()
         self.in_dim = in_dim
         self.embedding_dim = embedding_dim
@@ -472,6 +472,17 @@ class vqvae1d(nn.Module):
         self.encoder = Encoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens)
         self.vq_layer = VectorQuantizerEMA(embedding_dim, num_embeddings, commitment_cost, vq_cost,decay)
         self.decoder = Decoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens)
+
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.)
 
     def forward(self, gt_poses, id=None, pre_state=None):
         z = self.encoder(gt_poses)
