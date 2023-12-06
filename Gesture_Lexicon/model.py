@@ -138,11 +138,17 @@ class ConvNormRelu(nn.Module):
         elif sample == 'one':
             padding = 0
             kernel_size = stride = 1
+        elif sample in ['down_resample',"up_resample"] :  # for input T is 12, out 10, to uniform the enc/dec
+            kernel_size = 3
+            stride = 1
+            padding = 0
+            sample = sample[:-9]
         else:
             kernel_size = 4
             stride = 2
             padding = 0
         if self.residual:
+            
             if sample == 'down':
                 self.residual_layer = nn.Conv1d(
                     in_channels=in_channels,
@@ -355,19 +361,25 @@ class Encoder(nn.Module):
         self._num_residual_layers = num_residual_layers
         self._num_residual_hiddens = num_residual_hiddens
 
-        self.project = ConvNormRelu(in_dim, self._num_hiddens // 4, leaky=True)
-
+        self.project = nn.Conv1d(in_dim, self._num_hiddens // 8, 1, 1)
+        self._enc_0 = Res_CNR_Stack(self._num_hiddens // 8, self._num_residual_layers, leaky=True)
+        self._down_0 = ConvNormRelu(self._num_hiddens // 8, self._num_hiddens // 4, leaky=True, residual=True,
+                                    sample='down_resample')
+        
         self._enc_1 = Res_CNR_Stack(self._num_hiddens // 4, self._num_residual_layers, leaky=True)
         self._down_1 = ConvNormRelu(self._num_hiddens // 4, self._num_hiddens // 2, leaky=True, residual=True,
                                     sample='down')
         self._enc_2 = Res_CNR_Stack(self._num_hiddens // 2, self._num_residual_layers, leaky=True)
         self._down_2 = ConvNormRelu(self._num_hiddens // 2, self._num_hiddens, leaky=True, residual=True, sample='down')
+        
         self._enc_3 = Res_CNR_Stack(self._num_hiddens, self._num_residual_layers, leaky=True)
 
         self.pre_vq_conv = nn.Conv1d(self._num_hiddens, embedding_dim, 1, 1)
 
     def forward(self, x):
         h = self.project(x)
+        h = self._enc_0(h)
+        h = self._down_0(h)
         h = self._enc_1(h)
         h = self._down_1(h)
         h = self._enc_2(h)
@@ -410,8 +422,7 @@ class Decoder(nn.Module):
         self._dec_1 = Res_CNR_Stack(self._num_hiddens, self._num_residual_layers, leaky=True)
         self._up_2 = ConvNormRelu(self._num_hiddens, self._num_hiddens // 2, leaky=True, residual=True, sample='up')
         self._dec_2 = Res_CNR_Stack(self._num_hiddens // 2, self._num_residual_layers, leaky=True)
-        self._up_3 = ConvNormRelu(self._num_hiddens // 2, self._num_hiddens // 4, leaky=True, residual=True,
-                                  sample='up')
+        self._up_3 = ConvNormRelu(self._num_hiddens // 2, self._num_hiddens // 4, leaky=True, residual=True,sample='up')
         self._dec_3 = Res_CNR_Stack(self._num_hiddens // 4, self._num_residual_layers, leaky=True)
 
         if ae:
@@ -419,7 +430,10 @@ class Decoder(nn.Module):
             self.gru_sl = nn.GRU(self._num_hiddens // 2, self._num_hiddens // 2, 1, batch_first=True)
             self.gru_l = nn.GRU(self._num_hiddens // 4, self._num_hiddens // 4, 1, batch_first=True)
 
-        self.project = nn.Conv1d(self._num_hiddens // 4, out_dim, 1, 1)
+        self._up_4 = ConvNormRelu(self._num_hiddens // 4, self._num_hiddens // 8, leaky=True, residual=True,
+                                    sample='up_resample')
+        self._dec_4 = Res_CNR_Stack(self._num_hiddens // 8, self._num_residual_layers, leaky=True)
+        self.project = nn.Conv1d(self._num_hiddens // 8, out_dim, 1, 1)
 
     def forward(self, h, last_frame=None):
 
@@ -429,7 +443,8 @@ class Decoder(nn.Module):
         h = self._dec_2(h)
         h = self._up_3(h)
         h = self._dec_3(h)
-
+        h = self._up_4(h)
+        h = self._dec_4(h)
         recon = self.project(h)
         return recon, None
 
@@ -735,10 +750,19 @@ if __name__ == "__main__":
         [128, 64, 4, 2, 1],
         [64, 45, 3, 1, 1]
     ]
-    vq_config = {
-            "embedding_dim": 192,
-            "num_embeddings": 50
-        }
+    vq_config= {
+            "in_dim": 45,
+            "embedding_dim": 512,
+            "num_embeddings": 512,
+
+            "num_hiddens": 1024,  # minize 512
+
+            "num_residual_layers":2,
+            "num_residual_hiddens":512,
+
+            "commitment_cost":0.02,
+            "vq_cost":0.0,
+    }
     #
     
     # encoder_config = [
@@ -755,7 +779,7 @@ if __name__ == "__main__":
     # ]
     conv_1d = vqvae1d(encoder_config, decoder_config,vq_config).to(device)
     #
-    x = torch.randn((5, 45, 20)).to(device)
+    x = torch.randn((10, 45, 12)).to(device)
     loss_commit, loss_vq, gt_recon = conv_1d(x)
     #
     # print(motif.shape, x_hat.shape)

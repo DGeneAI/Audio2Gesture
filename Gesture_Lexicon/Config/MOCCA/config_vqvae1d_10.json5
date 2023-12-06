@@ -1,0 +1,54 @@
+{
+    dir_data: "../Data/MOCCA/Processed_4/Training_Data",
+    dir_log: "./Training/MOCCA",
+
+    device: "cuda:0",
+
+    batch_size: 3000,
+    num_epoch: 4000,
+    checkpoint_save_epoch_num: 1000,
+    valid_num_epoch: 10,
+
+    optimizer: {
+        name: "Adam",
+        lr: 3e-4,
+        betas: [0.9, 0.999],
+        eps: 1e-8,
+        weight_decay: 0
+    },
+
+    network: {
+        name: "vqvae1d",
+        encoder_config: [
+            [45, 64, 3, 1, 1],
+            [64, 128, 4, 2, 1],
+            [128, 156, 3, 1, 1],
+            [156, 192, 4, 2, 1]
+        ],
+        decoder_config: [
+            [192, 156, 4, 2, 1],
+            [156, 128, 3, 1, 1],
+            [128, 64, 4, 2, 1],
+            [64, 45, 3, 1, 1]
+        ],
+        vq_config:{
+            "in_dim": 45,
+            "embedding_dim": 192,
+            "num_embeddings": 50,
+
+            "num_hiddens": 512, 
+
+            "num_residual_layers":2,
+            "num_residual_hiddens":512,
+
+            "commitment_cost":0.02,
+            "vq_cost":0.0,
+        }
+    },
+
+    loss: {
+        rot: 1.0,
+        vel: 0.5,
+        acc: 0.0,
+    }
+}

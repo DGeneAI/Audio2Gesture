@@ -34,3 +34,9 @@ class TrainingDataset(Dataset):
             "motion": self.motion_block[idx, :, :],
             "index": self.index_new[idx]
         }
+        
+if __name__ == "__main__":
+    file_path = '/root/project/Audio2Gesture/Data/MOCCA/Processed_4/Training_Data/train.npz'
+    train_dataset = TrainingDataset(file_path)
+    for i in range(len(train_dataset)):
+        print(train_dataset[i])
