@@ -6,8 +6,8 @@
     device: "cuda:0",
     batch_size: 400,
     num_epoch: 100,
-    checkpoint_save_num_epoch: 100,
-    valid_num_epoch: 1,
+    checkpoint_save_num_epoch: 10,
+    valid_num_epoch: 10,
 
     optimizer: {
         name: "Adam",
@@ -28,7 +28,7 @@
             aud_embed_dim: 64,
             mo_dim: 45,
             lxm_dim: 192,
-            rnn_hid_dim: 1024,
+            rnn_hid_dim: 768,
             rnn_out_dim: 45,
             rnn_depth: 4
         }
@@ -37,6 +37,6 @@
     loss: {
         rot: 1.0,
         vel: 0.5,
-        acc: 0.0
+        acc: 0.5,
     },
 }

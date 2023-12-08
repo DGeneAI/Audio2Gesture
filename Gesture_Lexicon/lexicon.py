@@ -107,8 +107,9 @@ def build_lexicon(path_dataset: str, path_pretrained_net: str, path_config_train
     return lexicon, lexemes
 
 
-def predict_lexeme(path_dataset: str, path_pretrained_net: str, path_config_train: str, path_lxm_scaler: str,
-                   lexicon, device: str = "cuda:0", save: bool = True):
+def predict_lexeme(path_dataset: str, path_pretrained_net: str, path_config_train: str, 
+                   path_lxm_scaler: str,lexicon, 
+                   device: str = "cuda:0", save: bool = True):
     print('predict lexemes...')
 
     inference = Inference(path_dataset, path_pretrained_net, device, path_config_train)

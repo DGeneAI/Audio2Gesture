@@ -11,6 +11,34 @@ from torch.nn import functional as F
 
 __all__ = ['MotionGenerator_RNN']
 
+class MotionEncoder_Conv1d(nn.Module):
+    def __init__(self, in_dim, hidden_dim, out_dim) -> None:
+        super().__init__()
+
+        self.layer0 = nn.Conv1d(in_dim, hidden_dim, 7, 1, 0)  # L: 30 -> 24
+        self.layer1 = nn.Conv1d(hidden_dim, hidden_dim, 5, 1, 0)  # L: 24 -> 20
+        self.layer2 = nn.Conv1d(hidden_dim, out_dim, 4, 2, 1)  # L: 20 -> 10
+        self.layer3 = nn.Linear(out_dim, out_dim)
+
+        self.norm = nn.LayerNorm(out_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x : [N, D, L]
+        """
+
+        x = F.gelu(self.layer0(x))
+        x = F.gelu(self.layer1(x))
+        x = F.gelu(self.layer2(x))
+
+        x = torch.einsum('NDL->NLD', x)
+
+        x = F.gelu(self.layer3(x))
+        x = self.norm(x)
+
+        x = torch.einsum('NLD->NDL', x)
+
+        return x
 
 class MotionGenerator_RNN(nn.Module):
     def __init__(self,
@@ -21,6 +49,7 @@ class MotionGenerator_RNN(nn.Module):
         super().__init__()
 
         self.audio_encoder = AudioEncoder_Conv1d(aud_dim, aud_hid_dim, aud_embed_dim)
+        # self.motion_encoder = MotionEncoder_Conv1d(mo_dim, aud_hid_dim, aud_embed_dim)
 
         self.motion_decoder = GRUDecoder(mo_dim, aud_embed_dim, lxm_dim, rnn_hid_dim, rnn_out_dim, rnn_depth)
         self.cell_state_init = CellStateInitializer(mo_dim+lxm_dim, rnn_hid_dim, rnn_depth)
@@ -43,10 +72,10 @@ class MotionGenerator_RNN(nn.Module):
         """
         N, D, L = aud.shape
         B = lxm.shape[-1]
-        BL = L // B  # BL: block length
+        BL = L // B  # BL: block length， Uniform length
 
         # initialize the hidden state of rnn
-        cell_state = self.cell_state_init(mo[:, :, BL-1], lxm[:, :, 0])
+        cell_state = self.cell_state_init(mo[:, :, BL-1], lxm[:, :, 0])  # [rnn_layer, N, rnn_hid_dim]
 
         mo_hat = []  # without the first and the last blocks. element shape: [N, D, 1]
         for b_idx in range(B-2):
@@ -98,7 +127,35 @@ class AudioEncoder_Conv1d(nn.Module):
 
         return x
 
+class AudioEncoder_vqwav2vec(nn.Module):
+    def __init__(self, in_dim, hidden_dim, out_dim) -> None:
+        super().__init__()
 
+        self.layer0 = nn.Conv1d(in_dim, hidden_dim, 7, 1, 0)  # L: 30 -> 24
+        self.layer1 = nn.Conv1d(hidden_dim, hidden_dim, 5, 1, 0)  # L: 24 -> 20
+        self.layer2 = nn.Conv1d(hidden_dim, out_dim, 4, 2, 1)  # L: 20 -> 10
+        self.layer3 = nn.Linear(out_dim, out_dim)
+
+        self.norm = nn.LayerNorm(out_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x : [N, D, L]
+        """
+
+        x = F.gelu(self.layer0(x))
+        x = F.gelu(self.layer1(x))
+        x = F.gelu(self.layer2(x))
+
+        x = torch.einsum('NDL->NLD', x)
+
+        x = F.gelu(self.layer3(x))
+        x = self.norm(x)
+
+        x = torch.einsum('NLD->NDL', x)
+
+        return x
+    
 class GRUDecoder(nn.Module):
     def __init__(self, mo_dim, aud_embed_dim, lxm_dim, hidden_dim, out_dim, depth):
         super().__init__()

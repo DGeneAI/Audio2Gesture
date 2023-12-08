@@ -10,6 +10,9 @@ This is a reproduced PyTorch/GPU implementation of the paper [Rhythmic Gesticula
 - More coming soon.
 ###  🐛 Existing bug 
 - 💥  The official  open-source code for the **gesture generator model** collapsed.
+- 💥  The official  open-source code for the **Audio Encoder** does not use pre-trained encoder which is vq-wav2vec has L=8 conv layers. And do not finu-tine audio encoder with text using contrastive learning strategy.
+- 💥 The official  open-source code for the **Motion Encoder** of  **gesture generator model**  is missing.
+- 💥 There is only on loss of reconstructive loss when training the gesture generator. Three loss functions are not provided, which are *L_perc*, *L_lexeme* and *L_z*(for style control). 
 
 This version is based on [Trinity Speech-Gesture Dataset (GENEA Challenge 2020)](https://trinityspeechgesture.scss.tcd.ie/) and  [MOCCA Gesture Dataset](https://github.com/Aubrey-ao/HumanBehaviorAnimation/tree/main/HumanBehaviorAnimation/RhythmicGesticulator/MOCCA_Gesture_Dataset).
 If want to get better performances of motion quality and speech generalization, you can try to train the system with bigger datasets like [BEAT Dataset](https://github.com/PantoMatrix/BEAT).

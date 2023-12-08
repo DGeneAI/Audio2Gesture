@@ -111,6 +111,7 @@ def build_lexicon(path_dataset: str, path_pretrained_net: str, path_config_train
 
 
 def predict_lexeme(path_dataset: str, path_pretrained_net: str, path_config_train: str,
+                   path_lxm_scaler: str,lexicon, 
                 device: str = "cuda:0", save: bool = True):
     print('predict lexemes...')
 
@@ -118,6 +119,7 @@ def predict_lexeme(path_dataset: str, path_pretrained_net: str, path_config_trai
 
     lexemes,labels, latent_code = inference.infer()  # num_clips X num_blocks X dim_feat.
     # latent_code_reshaped = latent_code.reshape(-1, latent_code.shape[-1])  # (num_clips*num_blocks) X dim_feat.
+    
     latent_code = latent_code.reshape(lexemes.shape[0], lexemes.shape[1],-1).astype(int)
     labels_clip = labels.reshape(lexemes.shape[0], lexemes.shape[1]).astype(int)
     print('lexeme:', lexemes.shape)  # num_clip, 10, 192
@@ -151,5 +153,5 @@ if __name__ == '__main__':
 
     # lexicon, _ = build_lexicon(train_data_path, args.checkpoint_path, args.checkpoint_config,
     #                            args.lexicon_size, args.num_kmeans_rerun, args.device, args.save)
-    _ = predict_lexeme(train_data_path, args.checkpoint_path, args.checkpoint_config, args.device, args.save)
-    _ = predict_lexeme(valid_data_path, args.checkpoint_path, args.checkpoint_config, args.device, args.save)
+    _ = predict_lexeme(train_data_path, args.checkpoint_path, args.checkpoint_config, None,None,args.device, args.save)
+    _ = predict_lexeme(valid_data_path, args.checkpoint_path, args.checkpoint_config,None,None,args.device, args.save)
