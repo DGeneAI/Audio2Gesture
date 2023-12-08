@@ -107,7 +107,8 @@ class Trainer:
         
         # region Criterion.
 
-        self.criterion_l1 = torch.nn.L1Loss()
+        self.criterion_l1 = torch.nn.SmoothL1Loss()
+        # self.criterion_l1 = torch.nn.L1Loss()
         
         # endregion
     

@@ -167,7 +167,7 @@ class Trainer:
                 if self.config['network']['name'] in ['Conv1d', 'Transformer',]:
                     _, motion_block_hat = self.net(motion_block)
                 elif self.config['network']['name'] in ['vqvae1d']:
-                    loss_commit,loss_vq,motion_block_hat = self.net(motion_block)
+                    loss_commit,loss_vq,motion_block_hat,_ ,_,_ = self.net(motion_block)
                 else:
                     raise NotImplementedError
                 
@@ -266,7 +266,7 @@ class Trainer:
                         if self.config['network']['name'] in ['Conv1d', 'Transformer',]:
                             _, motion_block_hat = self.net(motion_block)
                         elif self.config['network']['name'] in ['vqvae1d']:
-                            loss_commit,loss_vq, motion_block_hat = self.net(motion_block)
+                            loss_commit,loss_vq, motion_block_hat,_ ,_ ,_= self.net(motion_block)
                         else:
                             raise NotImplementedError
                         loss_rot = self.criterion(motion_block, motion_block_hat)

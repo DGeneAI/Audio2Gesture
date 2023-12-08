@@ -35,29 +35,36 @@ class Inference:
         if self.config['network']['name'] == 'Conv1d':
             self.net = Conv1d(self.config['network']['encoder_config'],
                               self.config['network']['decoder_config'])
+        elif self.config['network']['name'] == 'vqvae1d':
+            self.net = vqvae1d(self.config['network']['encoder_config'],
+                              self.config['network']['decoder_config'],
+                              self.config['network']['vq_config'])
         elif self.config['network']['name'] == 'Transformer':
             self.net = Transformer(**self.config['network']['hparams'])
+        
         else:
             raise NotImplementedError
 
         self.net.load_state_dict(torch.load(path_pretrained_net, map_location=torch.device("cpu")))
         self.net.to(self.device)
         
-        self.criterion = torch.nn.L1Loss()
+        self.criterion = torch.nn.SmoothL1Loss()
         
     
     def infer(self) -> np.ndarray:
         self.net.eval()
                 
-        loss_valid, loss_rot_valid, loss_vel_valid, loss_acc_valid = 0., 0., 0., 0.
+        loss_valid, loss_rot_valid, loss_vel_valid, loss_acc_valid,loss_commit_valid, loss_vq_valid= 0., 0., 0., 0., 0., 0.
         counter = 0
         with torch.no_grad():
-            latent_codes =[]
+            latent_codes ,encoding_indices, zs=[],[],[]
             for batch in self.data_loader:
                 motion_block = batch['motion'].to(self.device)  # batch_size X dim_feat X time.
             
                 if self.config['network']['name'] in ['Conv1d', 'Transformer']:
                     latent_code, motion_block_hat = self.net(motion_block)
+                elif self.config['network']['name'] in ['vqvae1d']:
+                    loss_commit,loss_vq, motion_block_hat,latent_code,encoding_indice, z= self.net(motion_block)
                 else:
                     raise NotImplementedError
 
@@ -73,6 +80,14 @@ class Inference:
                 loss_rot_valid += loss_rot.item() * motion_block.shape[0] * self.config["loss"]["rot"]
                 loss_vel_valid += loss_vel.item() * motion_block.shape[0] * self.config["loss"]["vel"]
                 loss_acc_valid += loss_acc.item() * motion_block.shape[0] * self.config["loss"]["acc"]
+                try:
+                    loss_commit_valid += loss_commit.item() * motion_block.shape[0] 
+                    loss_vq_valid += loss_vq.item() * motion_block.shape[0] 
+                except:
+                    import ipdb
+                    ipdb.set_trace()
+                    print(loss_commit)
+                
                 loss_valid += loss.item() * motion_block.shape[0]
                 counter += motion_block.shape[0]
 
@@ -80,22 +95,38 @@ class Inference:
                 latent_code = np.concatenate(np.split(latent_code, self.dataset.index.shape[1], axis=0), axis=2)
                 latent_code = np.transpose(latent_code, (0, 2, 1))  # num_clips X num_blocks X dim_feat.
                 latent_codes.append(latent_code)
+                
+                encoding_indice = encoding_indice.detach().cpu().numpy()
+                encoding_indices.append(encoding_indice)
+                
+                z = z.squeeze().cpu().numpy()
+                zs.append(z)
+                
 
         loss_valid /= counter
         loss_rot_valid /= counter
         loss_vel_valid /= counter
         loss_acc_valid /= counter
+        loss_commit_valid /= counter
+        loss_vq_valid /= counter
+        
         print('Validation',
-              f'Loss: {loss_valid:.5f}',
-              f'Rot Loss: {loss_rot_valid:.4f} /',
-              f'Vel Loss: {loss_vel_valid:.4f} /',
-              f'Acc Loss: {loss_acc_valid:.4f} /',
+                f'Loss: {loss_valid:.5f}',
+                f'Rot Loss: {loss_rot_valid:.4f} /',
+                f'Vel Loss: {loss_vel_valid:.4f} /',
+                f'Acc Loss: {loss_acc_valid:.4f} /',
+                f'Commit Loss: {loss_commit_valid:.4f} /',
+                f'VQ Loss: {loss_vq_valid:.4f} /',
               )
 
         latent_codes = np.concatenate(latent_codes, axis=0)  # num_clips X num_blocks X dim_feat.
+        encoding_indices = np.concatenate(encoding_indices, axis=0)  # num_clips X num_blocks X dim_feat.
+        zs = np.concatenate(zs,axis=0)
         
-        return latent_codes
-
+        if self.config['network']['name'] in ['vqvae1d']:
+            return latent_codes, encoding_indices ,zs
+        else:
+            return latent_codes
 
 if __name__ == "__main__":
     path_data = ""

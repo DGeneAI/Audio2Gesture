@@ -27,10 +27,10 @@ __all__ = ["build_lexicon", "predict_lexeme"]
 def get_args_parser():
     parser = argparse.ArgumentParser('gesture lexicon', add_help=False)
 
-    parser.add_argument('--data_dir', type=str, required=True)
-    parser.add_argument('--checkpoint_path', type=str, required=True)
-    parser.add_argument('--checkpoint_config', type=str, required=True)
-    parser.add_argument('--lexicon_size', type=int, default=50)
+    parser.add_argument('--data_dir', type=str, default = "../Data/MOCCA/Processed_4/Training_Data",)
+    parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_150115/Checkpoints/trained_model.pth",)
+    parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_150115/config.json5")
+    parser.add_argument('--lexicon_size', type=int,default=50)
     parser.add_argument('--num_kmeans_rerun', type=int, default=10)
     parser.add_argument('--device', type=str, default='cuda:0')
     parser.add_argument('--save', action='store_true')
@@ -106,26 +106,21 @@ def build_lexicon(path_dataset: str, path_pretrained_net: str, path_config_train
     return lexicon, lexemes
 
 
-def predict_lexeme(path_dataset: str, path_pretrained_net: str, path_config_train: str, path_lxm_scaler: str,
-                   lexicon, device: str = "cuda:0", save: bool = True):
+
+
+
+
+def predict_lexeme(path_dataset: str, path_pretrained_net: str, path_config_train: str,
+                device: str = "cuda:0", save: bool = True):
     print('predict lexemes...')
 
     inference = Inference(path_dataset, path_pretrained_net, device, path_config_train)
 
-    latent_code = inference.infer()  # num_clips X num_blocks X dim_feat.
-    latent_code_reshaped = latent_code.reshape(-1, latent_code.shape[-1])  # (num_clips*num_blocks) X dim_feat.
-
-    # normalization
-    scaler = jl.load(path_lxm_scaler)
-    latent_code_reshaped = scaler.transform(latent_code_reshaped)
-
-    labels = lexicon.predict(latent_code_reshaped)
-
-    labels_clip = labels.reshape(latent_code.shape[0], latent_code.shape[1]).astype(int)  # num_clips X num_blocks.
-    lexemes = lexicon.cluster_centers_[labels_clip, :]  # num_clips X num_blocks X dim_feat.
-    # lexemes_one_hot = np.eye(lexicon_size)[labels_clip, :]  # num_clips X num_blocks X dim_feat.
-
-    print('lexeme:', lexemes.shape)
+    lexemes,labels, latent_code = inference.infer()  # num_clips X num_blocks X dim_feat.
+    # latent_code_reshaped = latent_code.reshape(-1, latent_code.shape[-1])  # (num_clips*num_blocks) X dim_feat.
+    latent_code = latent_code.reshape(lexemes.shape[0], lexemes.shape[1],-1).astype(int)
+    labels_clip = labels.reshape(lexemes.shape[0], lexemes.shape[1]).astype(int)
+    print('lexeme:', lexemes.shape)  # num_clip, 10, 192
     print('lexeme_index:', labels_clip.shape)
     print('motion_latent_code:', latent_code.shape)
 
@@ -146,7 +141,7 @@ if __name__ == '__main__':
 
     train_data_path = os.path.join(args.data_dir, 'train.npz')
     valid_data_path = os.path.join(args.data_dir, 'valid.npz')
-    lxm_scaler_path = os.path.join(args.data_dir, 'train_lexeme_scaler.sav')
+    # lxm_scaler_path = os.path.join(args.data_dir, 'train_lexeme_scaler.sav')
 
     with open(os.path.join(args.data_dir, 'config.json5'), 'r') as f:
         dataset_config = json5.load(f)
@@ -154,8 +149,7 @@ if __name__ == '__main__':
     with open(os.path.join(args.data_dir, 'config.json5'), 'w') as f:
         json5.dump(dataset_config, f, indent=4)
 
-    lexicon, _ = build_lexicon(train_data_path, args.checkpoint_path, args.checkpoint_config,
-                               args.lexicon_size, args.num_kmeans_rerun, args.device, args.save)
-
-    _ = predict_lexeme(valid_data_path, args.checkpoint_path, args.checkpoint_config, lxm_scaler_path,
-                       lexicon, args.device, args.save)
+    # lexicon, _ = build_lexicon(train_data_path, args.checkpoint_path, args.checkpoint_config,
+    #                            args.lexicon_size, args.num_kmeans_rerun, args.device, args.save)
+    _ = predict_lexeme(train_data_path, args.checkpoint_path, args.checkpoint_config, args.device, args.save)
+    _ = predict_lexeme(valid_data_path, args.checkpoint_path, args.checkpoint_config, args.device, args.save)

@@ -285,14 +285,14 @@ class VectorQuantizerEMA(nn.Module):
     """
 
     def __init__(self, embedding_dim, num_embeddings, commitment_cost,vq_cost,decay,
-                 epsilon=1e-5):
+                 epsilon=1e-5, ):
         super().__init__()
         self.embedding_dim = embedding_dim
         self.num_embeddings = num_embeddings
         self.commitment_cost = commitment_cost
         self.vq_cost = vq_cost
         self.epsilon = epsilon
-
+        # self.infer = infer
         # initialize embeddings as buffers
         embeddings = torch.empty(self.num_embeddings, self.embedding_dim)
         nn.init.xavier_uniform_(embeddings)
@@ -339,7 +339,10 @@ class VectorQuantizerEMA(nn.Module):
         quantized = x + (quantized - x).detach()
 
         quantized = quantized.permute(0, 2, 1).contiguous()
-        return quantized, loss_commit,loss_vq 
+        
+        # if not self.training and self.infer:
+        #     return quantized, encoding_indices 
+        return quantized, loss_commit,loss_vq ,encoding_indices 
 
     def get_code_indices(self, flat_x):
         # compute L2 distance
@@ -354,6 +357,7 @@ class VectorQuantizerEMA(nn.Module):
     def quantize(self, encoding_indices):
         """Returns embedding tensor for a batch of indices."""
         return F.embedding(encoding_indices, self.embeddings)
+    
 class Encoder(nn.Module):
     def __init__(self, in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens):
         super(Encoder, self).__init__()
@@ -473,7 +477,7 @@ class vqvae1d(nn.Module):
                 #  embedding_dim=64, num_embeddings=1024,
                 #  num_hiddens=1024, num_residual_layers=2, num_residual_hiddens=512,
                 #  commitment_cost=0.25,vq_cost=1, 
-                 decay=0.99, share=False):
+                 decay=0.99, share=False, infer=False):
         super().__init__()
         self.in_dim = vq_config["in_dim"]
         embedding_dim= vq_config['embedding_dim']
@@ -483,7 +487,7 @@ class vqvae1d(nn.Module):
         num_residual_hiddens = vq_config['num_residual_hiddens']
         commitment_cost = vq_config['commitment_cost']
         vq_cost = vq_config['vq_cost']
-        
+        self.infer = infer
         self.embedding_dim = embedding_dim
         self.num_embeddings = num_embeddings
         self.share_code_vq = share
@@ -504,15 +508,15 @@ class vqvae1d(nn.Module):
 
     def forward(self, gt_poses, id=None, pre_state=None):
         z = self.encoder(gt_poses)
-        # if not self.training:
-        #     e, _ = self.vq_layer(z)
-        #     x_recon, cur_state = self.decoder(e, pre_state.transpose(1, 2) if pre_state is not None else None)
-        #     return e, x_recon
+        # if not self.training and self.infer:
+        #     e, _ , _, encoding_indices  = self.vq_layer(z)
+        #     # x_recon, cur_state = self.decoder(e, pre_state.transpose(1, 2) if pre_state is not None else None)
+        #     return e, encoding_indices 
 
-        e, loss_commit, loss_vq = self.vq_layer(z)
+        e, loss_commit, loss_vq,  encoding_indices  = self.vq_layer(z)
         gt_recon, cur_state = self.decoder(e, pre_state.transpose(1, 2) if pre_state is not None else None)
 
-        return loss_commit, loss_vq, gt_recon
+        return loss_commit, loss_vq, gt_recon, e, encoding_indices, z
     def encode(self, gt_poses, id=None):
         z = self.encoder(gt_poses.transpose(1, 2))
         e, latents = self.vq_layer(z)

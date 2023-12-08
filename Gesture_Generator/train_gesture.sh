@@ -8,4 +8,4 @@ CUDA_VISIBLE_DEVICES=0 python inference.py \
     --lxc_checkpoint_path ../Gesture_Lexicon/Training/MOCCA/_Transformer_20231110_142117/Checkpoints/trained_model.pth \
     --lxc_checkpoint_config ../Gesture_Lexicon/Training/MOCCA/_Transformer_20231110_142117/config.json5 \
     --device cuda:0 \
-    --save_dir ./test_audio_motion/
+    --save_dir ./test_audio_motion/ 
