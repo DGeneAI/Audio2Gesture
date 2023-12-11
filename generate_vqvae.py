@@ -96,19 +96,19 @@ class Inference:
         # with open(os.path.join(self.dataset_dir, "lexicon.pkl"), "rb") as f:
         #     lexicon = pickle.load(f)
         # init_lxm_idx = stats.mode(lexicon.labels_).mode[0]  # default to the most frequent lexeme
+        # try:
+        #     with open(os.path.join(self.dataset_dir, "lexicon.pkl"), "rb") as f:
+        #         lexicon = pickle.load(f)
+        #     init_lxm_idx = stats.mode(lexicon.labels_).mode[0]  # default to the most frequent lexeme
+        # except:
         try:
-            with open(os.path.join(self.dataset_dir, "lexicon.pkl"), "rb") as f:
-                lexicon = pickle.load(f)
-            init_lxm_idx = stats.mode(lexicon.labels_).mode[0]  # default to the most frequent lexeme
+            f_path = os.path.join(self.dataset_dir, "train.npz")
+            codebook_path = os.path.join(self.dataset_dir,"codebook_2048*96.pth")
+            lexeme_index = dict(np.load(f_path))['lexeme_index']
+            init_lxm_idx = stats.mode(lexeme_index.reshape(-1)).mode[0] 
+            codebook = torch.load(codebook_path).to(self.device)
         except:
-            try:
-                f_path = os.path.join(self.dataset_dir, "train.npz")
-                codebook_path = os.path.join(self.dataset_dir,"codebook.pth")
-                lexeme_index = dict(np.load(f_path))['lexeme_index']
-                init_lxm_idx = stats.mode(lexeme_index.reshape(-1)).mode[0] 
-                codebook = torch.load(codebook_path).to(self.device)
-            except:
-                raise ValueError
+            raise ValueError
         processed_data = np.load(os.path.join(dir_save, f"{dataset_type}.npz"))
         aud = processed_data['audio'].astype(np.float32)  # [N(1), L, D]
         mo = processed_data['motion'].astype(np.float32)  # [N(1), L, D]
@@ -139,9 +139,13 @@ class Inference:
             aud = torch.from_numpy(aud).to(self.device)
             init_lxm_idx = torch.tensor([[init_lxm_idx]]).to(self.device).long()
             try:
-                lxc = torch.from_numpy(lexicon.cluster_centers_).to(self.device)
-            except:
                 lxc = codebook
+
+            except:
+                try:
+                    lxc = torch.from_numpy(lexicon.cluster_centers_).to(self.device)
+                except:
+                    raise  ValueError
             lxm_idx_pred = self.lxm_intp.generate(aud[:, BL:, :], init_lxm_idx)[0].long()
             lxm_idx_pred = torch.cat([init_lxm_idx, lxm_idx_pred], dim=-1)
             lxm_pred = lxc[lxm_idx_pred, :]

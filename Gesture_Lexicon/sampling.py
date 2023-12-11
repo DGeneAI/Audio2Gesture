@@ -124,7 +124,7 @@ class Inference:
         zs = np.concatenate(zs,axis=0)
         
         if self.config['network']['name'] in ['vqvae1d']:
-            return latent_codes, encoding_indices ,zs
+            return latent_codes, encoding_indices ,zs, self.net.vq_layer.embeddings.cpu().detach()
         else:
             return latent_codes
 

@@ -33,16 +33,16 @@
         ],
         vq_config:{
             "in_dim": 45,
-            "embedding_dim": 192,
-            "num_embeddings": 50,
+            "embedding_dim": 96,
+            "num_embeddings": 2048,
 
             "num_hiddens": 512, 
 
             "num_residual_layers":2,
             "num_residual_hiddens":512,
 
-            "commitment_cost":0.02,
-            "vq_cost":0.0,
+            "commitment_cost":0.2,
+            "vq_cost":1.0,
         }
     },
 

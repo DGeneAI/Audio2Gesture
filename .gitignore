@@ -6,7 +6,9 @@ Gesture_Lexicon/Training
 Lexeme_Interpreter/Training
 output
 test_audio_motion
+test_audio_motion_vqvae
 test_audio_motion_copy
+test_vqvae
 MOCCA_Gesture
 
 Pretrained_Source.zip
