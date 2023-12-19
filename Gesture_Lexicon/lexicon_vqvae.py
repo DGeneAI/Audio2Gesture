@@ -16,7 +16,7 @@ module_path = os.path.dirname(os.path.abspath(__file__))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-from sampling import Inference
+from sampling_vqvae import Inference
 
 # endregion
 
@@ -34,13 +34,20 @@ def get_args_parser():
     # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_150115/config.json5")
     
     # 512*512
-    parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_115324/Checkpoints/trained_model.pth",)
-    parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_115324/config.json5")
+    # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_115324/Checkpoints/trained_model.pth",)
+    # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_115324/config.json5")
+    
+    # 512*2048
+    # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231218_190058/Checkpoints/trained_model.pth",)
+    # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231218_190058/config.json5")
+    
+    # 96*2048
+    parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231211_133715/Checkpoints/trained_model.pth",)
+    parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231211_133715/config.json5")
     
     
     
-    
-    parser.add_argument('--lexicon_size', type=int,default=512)
+    parser.add_argument('--lexicon_size', type=int,default=2048)
     parser.add_argument('--num_kmeans_rerun', type=int, default=512)
     
     parser.add_argument('--device', type=str, default='cuda:0')

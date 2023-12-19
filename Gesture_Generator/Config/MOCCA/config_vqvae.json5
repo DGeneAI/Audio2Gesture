@@ -1,5 +1,5 @@
 {
-    dir_data: "../Data/MOCCA/Processed_4/Training_Data",
+    dir_data: "../Data/MOCCA/Processed_6/Training_Data",
     
     dir_log: "./Training/MOCCA",
 
@@ -27,7 +27,7 @@
             aud_hid_dim: 64,
             aud_embed_dim: 64,
             mo_dim: 45,
-            lxm_dim: 96,
+            lxm_dim: 512,
             rnn_hid_dim: 1024,
             rnn_out_dim: 45,
             rnn_depth: 4

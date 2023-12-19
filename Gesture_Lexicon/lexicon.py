@@ -32,7 +32,7 @@ def get_args_parser():
     parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_Transformer_20231110_142117/Checkpoints/trained_model.pth",)
     parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_Transformer_20231110_142117/config.json5")
     parser.add_argument('--lexicon_size', type=int,default=2048)
-    parser.add_argument('--num_kmeans_rerun', type=int, default=10)
+    parser.add_argument('--num_kmeans_rerun', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda:0')
     parser.add_argument('--save', action='store_true')
 

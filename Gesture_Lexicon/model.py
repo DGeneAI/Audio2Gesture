@@ -359,20 +359,27 @@ class VectorQuantizerEMA(nn.Module):
         return F.embedding(encoding_indices, self.embeddings)
     
 class Encoder(nn.Module):
-    def __init__(self, in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens):
+    def __init__(self, in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens,uniform_length=12):
         super(Encoder, self).__init__()
         self._num_hiddens = num_hiddens
         self._num_residual_layers = num_residual_layers
         self._num_residual_hiddens = num_residual_hiddens
-
-        self.project = nn.Conv1d(in_dim, self._num_hiddens // 8, 1, 1)
-        self._enc_0 = Res_CNR_Stack(self._num_hiddens // 8, self._num_residual_layers, leaky=True)
-        self._down_0 = ConvNormRelu(self._num_hiddens // 8, self._num_hiddens // 4, leaky=True, residual=True,
-                                    sample='down_resample')
-        
+        self.uniform_length  = uniform_length
+        if self.uniform_length == 10:
+            self.project = nn.Conv1d(in_dim, self._num_hiddens // 4, 1, 1)
+            # self._enc_0 = Res_CNR_Stack(self._num_hiddens // 8, self._num_residual_layers, leaky=True)
+            # self._down_0 = ConvNormRelu(self._num_hiddens // 8, self._num_hiddens // 4, leaky=True, residual=True,
+            #                             sample='down_resample')
+        elif self.uniform_length == 12:
+            self.project = nn.Conv1d(in_dim, self._num_hiddens // 8, 1, 1)
+            self._enc_0 = Res_CNR_Stack(self._num_hiddens // 8, self._num_residual_layers, leaky=True)
+            self._down_0 = ConvNormRelu(self._num_hiddens // 8, self._num_hiddens // 4, leaky=True, residual=True,
+                                        sample='down_resample')
+        else:
+            raise ValueError
+            
         self._enc_1 = Res_CNR_Stack(self._num_hiddens // 4, self._num_residual_layers, leaky=True)
-        self._down_1 = ConvNormRelu(self._num_hiddens // 4, self._num_hiddens // 2, leaky=True, residual=True,
-                                    sample='down')
+        self._down_1 = ConvNormRelu(self._num_hiddens // 4, self._num_hiddens // 2, leaky=True, residual=True, sample='down')
         self._enc_2 = Res_CNR_Stack(self._num_hiddens // 2, self._num_residual_layers, leaky=True)
         self._down_2 = ConvNormRelu(self._num_hiddens // 2, self._num_hiddens, leaky=True, residual=True, sample='down')
         
@@ -382,8 +389,13 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         h = self.project(x)
-        h = self._enc_0(h)
-        h = self._down_0(h)
+        if self.uniform_length == 10:
+            pass
+        elif self.uniform_length == 12:
+            h = self._enc_0(h)
+            h = self._down_0(h)
+        else:
+            raise ValueError
         h = self._enc_1(h)
         h = self._down_1(h)
         h = self._enc_2(h)
@@ -415,12 +427,12 @@ class Frame_Enc(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, out_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens, ae=False):
+    def __init__(self, out_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens, ae=False, uniform_length = 12):
         super(Decoder, self).__init__()
         self._num_hiddens = num_hiddens
         self._num_residual_layers = num_residual_layers
         self._num_residual_hiddens = num_residual_hiddens
-
+        self.uniform_length =  uniform_length
         self.aft_vq_conv = nn.Conv1d(embedding_dim, self._num_hiddens, 1, 1)
 
         self._dec_1 = Res_CNR_Stack(self._num_hiddens, self._num_residual_layers, leaky=True)
@@ -433,12 +445,14 @@ class Decoder(nn.Module):
             self.frame_enc = Frame_Enc(out_dim, self._num_hiddens // 4)
             self.gru_sl = nn.GRU(self._num_hiddens // 2, self._num_hiddens // 2, 1, batch_first=True)
             self.gru_l = nn.GRU(self._num_hiddens // 4, self._num_hiddens // 4, 1, batch_first=True)
-
-        self._up_4 = ConvNormRelu(self._num_hiddens // 4, self._num_hiddens // 8, leaky=True, residual=True,
-                                    sample='up_resample')
-        self._dec_4 = Res_CNR_Stack(self._num_hiddens // 8, self._num_residual_layers, leaky=True)
-        self.project = nn.Conv1d(self._num_hiddens // 8, out_dim, 1, 1)
-
+        if self.uniform_length == 10:
+            self.project = nn.Conv1d(self._num_hiddens // 4, out_dim, 1, 1)
+        elif self.uniform_length == 12:
+            self._up_4 = ConvNormRelu(self._num_hiddens // 4, self._num_hiddens // 8, leaky=True, residual=True, sample='up_resample')
+            self._dec_4 = Res_CNR_Stack(self._num_hiddens // 8, self._num_residual_layers, leaky=True)
+            self.project = nn.Conv1d(self._num_hiddens // 8, out_dim, 1, 1)
+        else:
+            raise ValueError
     def forward(self, h, last_frame=None):
 
         h = self.aft_vq_conv(h)
@@ -447,8 +461,13 @@ class Decoder(nn.Module):
         h = self._dec_2(h)
         h = self._up_3(h)
         h = self._dec_3(h)
-        h = self._up_4(h)
-        h = self._dec_4(h)
+        if self.uniform_length == 10:
+            pass
+        elif self.uniform_length == 12:
+            h = self._up_4(h)
+            h = self._dec_4(h)
+        else:
+            raise ValueError
         recon = self.project(h)
         return recon, None
 
@@ -491,9 +510,10 @@ class vqvae1d(nn.Module):
         self.embedding_dim = embedding_dim
         self.num_embeddings = num_embeddings
         self.share_code_vq = share
-        self.encoder = Encoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens)
+        self.uniform_length = 12
+        self.encoder = Encoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens,uniform_length=self.uniform_length)
         self.vq_layer = VectorQuantizerEMA(embedding_dim, num_embeddings, commitment_cost, vq_cost,decay)
-        self.decoder = Decoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens)
+        self.decoder = Decoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens,uniform_length=self.uniform_length)
 
         self.apply(self._init_weights)
 
@@ -730,7 +750,7 @@ class Transformer(nn.Module):
         """
         _, _, L = x.shape
 
-        lxm = self.forward_encoder(x)
+        lxm = self.forward_encoder(x)  # x[5,45,10] -> [5,96,1]
         x_hat = self.forward_decoder(lxm, L)
 
         return lxm, x_hat
@@ -781,10 +801,10 @@ if __name__ == "__main__":
     #     [128, 64, 3, 1, 1],
     #     [64, 45, 4, 2, 1]
     # ]
-    conv_1d = vqvae1d(encoder_config, decoder_config,vq_config).to(device)
+    # conv_1d = vqvae1d(encoder_config, decoder_config,vq_config).to(device)
     #
-    x = torch.randn((10, 45, 12)).to(device)
-    loss_commit, loss_vq, gt_recon = conv_1d(x)
+    # x = torch.randn((10, 45, 10)).to(device)
+    # loss_commit, loss_vq, gt_recon = conv_1d(x)
     #
     # print(motif.shape, x_hat.shape)
     
@@ -792,9 +812,9 @@ if __name__ == "__main__":
 
     # region Transformer
 
-    model = Transformer(48, 96).to(device)
+    model = Transformer(45, 96).to(device)
     #
-    x = torch.randn((5, 48, 10)).to(device)  # [N, D, L]
+    x = torch.randn((5, 45, 10)).to(device)  # [N, D, L]
     
     lexeme, x_hat = model(x)
     #

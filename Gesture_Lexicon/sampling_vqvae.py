@@ -80,13 +80,13 @@ class Inference:
                 loss_rot_valid += loss_rot.item() * motion_block.shape[0] * self.config["loss"]["rot"]
                 loss_vel_valid += loss_vel.item() * motion_block.shape[0] * self.config["loss"]["vel"]
                 loss_acc_valid += loss_acc.item() * motion_block.shape[0] * self.config["loss"]["acc"]
-                # try:
-                #     loss_commit_valid += loss_commit.item() * motion_block.shape[0] 
-                #     loss_vq_valid += loss_vq.item() * motion_block.shape[0] 
-                # except:
-                #     import ipdb
-                #     ipdb.set_trace()
-                #     print(loss_commit)
+                try:
+                    loss_commit_valid += loss_commit.item() * motion_block.shape[0] 
+                    loss_vq_valid += loss_vq.item() * motion_block.shape[0] 
+                except:
+                    import ipdb
+                    ipdb.set_trace()
+                    print(loss_commit)
                 
                 loss_valid += loss.item() * motion_block.shape[0]
                 counter += motion_block.shape[0]
@@ -96,11 +96,11 @@ class Inference:
                 latent_code = np.transpose(latent_code, (0, 2, 1))  # num_clips X num_blocks X dim_feat.
                 latent_codes.append(latent_code)
                 
-                # encoding_indice = encoding_indice.detach().cpu().numpy()
-                # encoding_indices.append(encoding_indice)
+                encoding_indice = encoding_indice.detach().cpu().numpy()
+                encoding_indices.append(encoding_indice)
                 
-                # z = z.squeeze().cpu().numpy()
-                # zs.append(z)
+                z = z.squeeze().cpu().numpy()
+                zs.append(z)
                 
 
         loss_valid /= counter
@@ -120,8 +120,8 @@ class Inference:
               )
 
         latent_codes = np.concatenate(latent_codes, axis=0)  # num_clips X num_blocks X dim_feat.
-        # encoding_indices = np.concatenate(encoding_indices, axis=0)  # num_clips X num_blocks X dim_feat.
-        # zs = np.concatenate(zs,axis=0)
+        encoding_indices = np.concatenate(encoding_indices, axis=0)  # num_clips X num_blocks X dim_feat.
+        zs = np.concatenate(zs,axis=0)
         
         if self.config['network']['name'] in ['vqvae1d']:
             return latent_codes, encoding_indices ,zs, self.net.vq_layer.embeddings.cpu().detach()

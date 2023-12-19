@@ -103,7 +103,7 @@ class Inference:
         # except:
         try:
             f_path = os.path.join(self.dataset_dir, "train.npz")
-            codebook_path = os.path.join(self.dataset_dir,"codebook_2048*96.pth")
+            codebook_path = os.path.join(self.dataset_dir,"codebook_2048*512.pth")
             lexeme_index = dict(np.load(f_path))['lexeme_index']
             init_lxm_idx = stats.mode(lexeme_index.reshape(-1)).mode[0] 
             codebook = torch.load(codebook_path).to(self.device)

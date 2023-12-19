@@ -1,5 +1,5 @@
 {
-    dir_data: "../Data/MOCCA/Processed_4/Training_Data",
+    dir_data: "../Data/MOCCA/Processed_6/Training_Data",
     dir_log: "./Training/MOCCA",
 
     device: "cuda:0",
@@ -11,7 +11,7 @@
 
     optimizer: {
         name: "Adam",
-        lr: 5e-5,
+        lr: 1e-4,
         betas: [0.9, 0.999],
         eps: 1e-8,
         weight_decay: 0
@@ -33,16 +33,16 @@
         ],
         vq_config:{
             "in_dim": 45,
-            "embedding_dim": 96,
+            "embedding_dim": 512,
             "num_embeddings": 2048,
 
-            "num_hiddens": 512, 
+            "num_hiddens": 1024, 
 
             "num_residual_layers":2,
             "num_residual_hiddens":512,
 
-            "commitment_cost":0.2,
-            "vq_cost":1.0,
+            "commitment_cost":0.25,
+            "vq_cost":0.0,
         }
     },
 
