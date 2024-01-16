@@ -10,7 +10,8 @@ test_audio_motion_vqvae
 test_audio_motion_copy
 test_vqvae
 MOCCA_Gesture
-
+checkpoint/wav2vec
+checkpoint
 Pretrained_Source.zip
 output_cctv.wav
 Gesture_Lexicon/Training/Trinity/Conv1d/Checkpoints/trained_model.pth
