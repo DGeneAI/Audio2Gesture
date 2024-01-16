@@ -194,14 +194,14 @@ class Inference:
 
         # endregion
 
-        # # region Inverse scaler.
+        # region Inverse scaler.
 
-        # motion_scaler = jl.load(os.path.join(dir_processed_dataset, "train_motion_scaler.sav"))
+        motion_scaler = jl.load(os.path.join(dir_processed_dataset, "train_motion_scaler.sav"))
 
-        # motion_gt = inv_standardize(motion_gt, motion_scaler)
-        # motion_pred = inv_standardize(motion_pred, motion_scaler)
+        motion_gt = inv_standardize(motion_gt, motion_scaler)
+        motion_pred = inv_standardize(motion_pred, motion_scaler)
 
-        # # endregion
+        # endregion
 
         # region Expmap to euler.
 

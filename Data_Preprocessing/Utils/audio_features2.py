@@ -5,7 +5,7 @@ import librosa
 
 import numpy as np
 import pyloudnorm as pyln
-
+from python_speech_features import logfbank
 from typing import List
 
 # endregion
@@ -37,6 +37,30 @@ def load_audio(dir_audio: str, names_file: List[str], dir_save: str,
         print(n + ':', res[-1].shape)
 
     return res
+
+def fre_audio(wav_data, sample_rate):
+    def stacker(feats, stack_order):
+        """
+        Concatenating consecutive audio frames, 4 frames of tf forms a new frame of tf
+        Args:
+        feats - numpy.ndarray of shape [T, F]
+        stack_order - int (number of neighboring frames to concatenate
+        Returns:
+        feats - numpy.ndarray of shape [T', F']
+        """
+        feat_dim = feats.shape[1]
+        if len(feats) % stack_order != 0:
+            res = stack_order - len(feats) % stack_order
+            res = np.zeros([res, feat_dim]).astype(feats.dtype)
+            feats = np.concatenate([feats, res], axis=0)
+        feats = feats.reshape((-1, stack_order, feat_dim)).reshape(-1, stack_order*feat_dim)
+        return feats
+    if len(wav_data.shape)>1:
+        audio_feats = logfbank(wav_data[:,0], samplerate=sample_rate).astype(np.float32)  # [T, F]
+    else:
+        audio_feats = logfbank(wav_data, samplerate=sample_rate).astype(np.float32)  # [T, F]
+    audio_feats = stacker(audio_feats, 4)  # [T/stack_order_audio, F*stack_order_audio]
+    return audio_feats
 
 
 def extract_melspec(dir_loaded_audio: str, names_file: List[str], dir_save: str,

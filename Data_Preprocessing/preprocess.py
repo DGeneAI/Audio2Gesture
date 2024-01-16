@@ -73,6 +73,7 @@ class Preprocessor:
             os.makedirs(dir_wav)
             _ = load_audio(dir_audio=dir_audio, names_file=name_files, dir_save=dir_wav, sr=sr, save=True)
 
+        # return: [sample_rating*audio_length, ]
         # endregion
         
         
@@ -88,7 +89,8 @@ class Preprocessor:
             _ = extract_melspec(dir_loaded_audio=dir_wav, names_file=name_files, dir_save=dir_mel,
                                 fps=fps, sr=sr, dim_mel=dim_mel, mel_filter_len=self.config["mel_filter_len"], mel_hop_len=self.config["mel_hop_len"],
                                 save=True)
-        
+            # return: [fps*audio_length, 80]
+            
         # endregion
         
         

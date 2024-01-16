@@ -162,10 +162,10 @@ class Inference:
             mo_hat = np.concatenate([mo[:, :BL, :], mo_hat, mo[:, -BL:, :]], axis=1)
             assert mo_hat.shape[1] == total_B * BL
 
-        # # inverse scaler
-        # motion_scaler = jl.load(os.path.join(self.dataset_dir, "train_motion_scaler.sav"))
-        # motion_pred = inv_standardize(mo_hat, motion_scaler)
-        motion_pred = mo_hat
+        # inverse scaler
+        motion_scaler = jl.load(os.path.join(self.dataset_dir, "train_motion_scaler.sav"))
+        motion_pred = inv_standardize(mo_hat, motion_scaler)
+        # motion_pred = mo_hat
         # expmap to euler
         motion_pred_euler = []
         data_frame_pred = pd.DataFrame(data=motion_pred[0],
