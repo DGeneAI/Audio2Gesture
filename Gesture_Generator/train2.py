@@ -207,7 +207,7 @@ class Trainer:
             loss_rot_train /= counter
             loss_vel_train /= counter
             loss_acc_train /= counter
-            loss_prec_train /= counter
+            loss_perc_train /= counter
             loss_train /= counter
             
             print('Training',
