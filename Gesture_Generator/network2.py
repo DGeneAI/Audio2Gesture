@@ -119,7 +119,7 @@ class MotionGenerator_RNN(nn.Module):
 
                 mo_hat.append(mo_pred.unsqueeze(-1))
 
-l         mo_hat = torch.cat(mo_hat, dim=-1)
+        mo_hat = torch.cat(mo_hat, dim=-1)
 
         return mo_hat
 

@@ -4,7 +4,7 @@
     dir_log: "./Training/MOCCA",
 
     device: "cuda:0",
-    batch_size: 2,
+    batch_size: 128,
     num_epoch: 600,
     checkpoint_save_num_epoch: 100,
     valid_num_epoch: 10,
