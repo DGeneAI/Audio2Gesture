@@ -7,7 +7,7 @@
     batch_size: 128,
     num_epoch: 600,
     checkpoint_save_num_epoch: 100,
-    valid_num_epoch: 10,
+    valid_num_epoch: 1,
 
     optimizer: {
         name: "Adam",
@@ -25,7 +25,7 @@
         hparams: {
             aud_dim: 80,
             aud_hid_dim: 64,
-            aud_embed_dim: 128,
+            aud_embed_dim: 384,
             mo_dim: 45,
             lxm_dim: 512,
             rnn_hid_dim: 1024,

@@ -303,7 +303,7 @@ class Trainer:
                 self.writer.add_scalar("Rot_Loss/Valid", loss_rot_valid, epoch)
                 self.writer.add_scalar("Vel_Loss/Valid", loss_vel_valid, epoch)
                 self.writer.add_scalar("Acc_Loss/Valid", loss_acc_valid, epoch)
-                self.writer.add_scalar("Perc_Loss/Valid", loss_acc_valid, epoch)
+                self.writer.add_scalar("Perc_Loss/Valid", loss_perc_valid, epoch)
                 
                 # endregion
             
