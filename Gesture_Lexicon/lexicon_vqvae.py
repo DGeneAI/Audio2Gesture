@@ -27,7 +27,7 @@ __all__ = ["build_lexicon", "predict_lexeme"]
 def get_args_parser():
     parser = argparse.ArgumentParser('gesture lexicon', add_help=False)
 
-    parser.add_argument('--data_dir', type=str, default = "../Data/MOCCA/Processed_4/Training_Data",)
+    parser.add_argument('--data_dir', type=str, default = "../Data/MOCCA/Processed_vqwav2vec2/Training_Data",)
     
     # 50*192， 
     # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_150115/Checkpoints/trained_model.pth",)
@@ -37,14 +37,17 @@ def get_args_parser():
     # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_115324/Checkpoints/trained_model.pth",)
     # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_115324/config.json5")
     
-    # 512*2048
+    # 512*2048 but data6
     # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231218_190058/Checkpoints/trained_model.pth",)
     # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231218_190058/config.json5")
     
     # 96*2048
-    parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231211_133715/Checkpoints/trained_model.pth",)
-    parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231211_133715/config.json5")
+    # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231211_133715/Checkpoints/trained_model.pth",)
+    # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231211_133715/config.json5")
     
+    # 512*2048
+    parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/Checkpoints/trained_model.pth",)
+    parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/config.json5")
     
     
     parser.add_argument('--lexicon_size', type=int,default=2048)
@@ -151,6 +154,11 @@ def predict_lexeme(path_dataset: str, path_pretrained_net: str, path_config_trai
     
     if save:
         print('save...')
+        # if path_dataset == r'../Data/MOCCA/Processed_4/Training_Data/train.npz':
+        #     path_dataset = r'../Data/MOCCA/Processed_vqwav2vec/Training_Data/train.npz'
+        # elif path_dataset == r'../Data/MOCCA/Processed_4/Training_Data/valid.npz':
+        #     path_dataset = r'../Data/MOCCA/Processed_vqwav2vec/Training_Data/train.npz'
+            
         data = dict(np.load(path_dataset))
         data["lexeme"] = lexemes
         data["lexeme_index"] = labels_clip
@@ -181,4 +189,4 @@ if __name__ == '__main__':
     # lexicon, _ = build_lexicon(train_data_path, args.checkpoint_path, args.checkpoint_config,
     #                            args.lexicon_size, args.num_kmeans_rerun, args.device, args.save)
     _ = predict_lexeme(train_data_path, args.checkpoint_path, args.checkpoint_config, None,None,args.device, args.save)
-    _ = predict_lexeme(valid_data_path, args.checkpoint_path, args.checkpoint_config,None,None,args.device, args.save)
+    _ = predict_lexeme(valid_data_path, args.checkpoint_path, args.checkpoint_config, None,None,args.device, args.save)

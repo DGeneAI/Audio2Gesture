@@ -8,7 +8,7 @@ import pandas as pd
 
 from typing import List, Tuple
 from .utils import *
-
+from scipy.io import wavfile
 # endregion
 
 
@@ -53,6 +53,7 @@ def uniform_data_fragment_length_tsm(dir_mel_motion_aligned: str, dir_onset: str
                                      save: bool = False) -> Tuple[List[np.ndarray], List[np.ndarray], List[pd.DataFrame]]:
 
     res_mel = []
+    res_wav = []
     res_motion = []
     res_scopes = []
 
@@ -144,19 +145,22 @@ def uniform_data_fragment_length_tsm(dir_mel_motion_aligned: str, dir_onset: str
             assert mel_resampled.shape[0] == motion_resampled.shape[0], f"{mel_resampled.shape[0]} vs {motion_resampled.shape[0]}"
 
             if save:
-                # wavfile.write(os.path.join(dir_save, n + f"{suffix}.wav"), sr, wav_resampled)
+                wavfile.write(os.path.join(dir_save, n + f"{suffix}.wav"), sr, wav_resampled)
                 np.save(os.path.join(dir_save, n + f"_scope{suffix}.npy"), np.array(scopes))
                 np.save(os.path.join(dir_save, n + f"_index{suffix}.npy"), np.arange(counter, counter + len(scopes)))
                 np.save(os.path.join(dir_save, n + f"_mel{suffix}.npy"), mel_resampled)
+                np.save(os.path.join(dir_save, n + f"_wav{suffix}.npy"), wav_resampled)
                 motion_resampled.to_csv(os.path.join(dir_save, n + f"_motion{suffix}.csv"))
 
             res_scopes.append(np.array(scopes))
+            res_wav.append(wav_resampled)
             res_mel.append(mel_resampled)
             res_motion.append(motion_resampled)
 
             print(n + f"_scope{suffix}:", res_scopes[-1].shape)
             print(n + f"_index{suffix}:", f"[{counter}, {counter + len(scopes) - 1}]")
             print(n + f"_mel{suffix}:", res_mel[-1].shape)
+            print(n + f"_wav{suffix}:", res_wav[-1].shape)
             print(n + f"_motion{suffix}:", res_motion[-1].shape)
 
             counter += len(scopes)
@@ -165,6 +169,6 @@ def uniform_data_fragment_length_tsm(dir_mel_motion_aligned: str, dir_onset: str
 
     counter = process("", counter)
 
-    return res_scopes, res_mel, res_motion
+    return res_scopes, res_mel, res_motion, res_wav
 
 

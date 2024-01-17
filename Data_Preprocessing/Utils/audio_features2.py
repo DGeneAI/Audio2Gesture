@@ -2,7 +2,7 @@
 
 import os
 import librosa
-
+import torch.nn.functional as F
 import numpy as np
 import pyloudnorm as pyln
 from python_speech_features import logfbank
@@ -11,7 +11,7 @@ from typing import List
 # endregion
 
 
-__all__ = ["load_audio", "extract_melspec", "detect_onset", "prepare_audio_feature"]
+__all__ = ["load_audio", "extract_melspec", "detect_onset", "prepare_audio_feature", "prepare_audio_feature_vq_wav2vec"]
 
 
 
@@ -229,6 +229,57 @@ def prepare_audio_feature(dir_data_len_uniform: str, names_file: List[str], dir_
             res.append(new_mel)
             
             print(n + f"{suffix}:", new_mel.shape)
+            
+            
+    
+    process()
+    
+    return res
+
+def prepare_audio_feature_vq_wav2vec(dir_data_len_uniform: str, names_file: List[str], dir_save: str,
+                          uniform_len: int, 
+                          save: bool = False) -> List[np.ndarray]:
+    # save block feature
+    import torch
+    import fairseq
+    cp_path = '/root/project/Audio2Gesture/checkpoint/wav2vec/vq-wav2vec.pt'
+    model, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([cp_path])
+    model = model[0]
+    model.eval()
+
+
+    res = []
+    
+    def process(suffix: str = ""):
+        for n in names_file:
+            wav = np.load(os.path.join(dir_data_len_uniform, n + f"_wav{suffix}.npy"))
+            
+            assert wav.shape[0]/(16000/20) % uniform_len == 0
+            # new_wav = wav
+            
+            wav = torch.tensor(wav).unsqueeze(dim=0)
+            reshape_wav =  wav.reshape(-1,1,12*800)
+            wav_feats = []
+            for i in range(reshape_wav.shape[0]):
+                # if i+64 <= reshape_wav.shape[0]:
+                #     wav_feat = model.feature_extractor(reshape_wav[i:i+64])
+                # else:
+                #     wav_feat = model.feature_extractor(reshape_wav[i:])
+                wav_feat = model.feature_extractor(reshape_wav[i])
+                target_size = 800*12/(16000/20)
+                interpolated_wav_feat = interpolated_wav_feat = F.interpolate(wav_feat , size=int(target_size), mode='linear', align_corners=False).squeeze().transpose(0,1)
+                wav_feats.append(interpolated_wav_feat)
+            wav_feats = torch.concat(wav_feats,dim=0)
+            # target_size = wav_feat.shape[1]/(16000/20)
+            # interpolated_wav_feat = F.interpolate(z, size=target_size, mode='linear', align_corners=False).squeeze().transpose(0,1)
+
+            if save:
+                np.save(os.path.join(dir_save, n + f"{suffix}.npy"), wav_feats)
+            
+            res.append(wav_feats)
+            print(n + f"{suffix}:", wav_feats.shape)
+            
+            
     
     process()
     

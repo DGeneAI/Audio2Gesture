@@ -3,9 +3,9 @@
 import torch
 
 import torch.nn as nn
-
+import fairseq
 from torch.nn import functional as F
-
+from einops import rearrange
 # endregion
 
 
@@ -40,6 +40,10 @@ class MotionEncoder_Conv1d(nn.Module):
 
         return x
 
+def build_audio_encoder(cp_path):
+    model, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([cp_path])
+    return model[0]
+    # model.eval()
 class MotionGenerator_RNN(nn.Module):
     def __init__(self,
                  aud_dim, aud_hid_dim, aud_embed_dim,
@@ -48,9 +52,13 @@ class MotionGenerator_RNN(nn.Module):
                  rnn_hid_dim, rnn_out_dim, rnn_depth):
         super().__init__()
 
-        self.audio_encoder = AudioEncoder_Conv1d(aud_dim, aud_hid_dim, aud_embed_dim)
+        # self.audio_encoder = AudioEncoder_Conv1d(aud_dim, aud_hid_dim, aud_embed_dim)
+        # self.downsampling_conv1d = nn.Conv1d(in_channels=512, out_channels=512, kernel_size=14, stride=14)
+
+        self.audio_mlp =  nn.Linear(512, aud_embed_dim)
         # self.motion_encoder = MotionEncoder_Conv1d(mo_dim, aud_hid_dim, aud_embed_dim)
-        self.audio_encoder_wav2vec
+        cp_path = '/root/project/Audio2Gesture/checkpoint/wav2vec/vq-wav2vec.pt'
+        self.audio_encoder_wav2vec = build_audio_encoder(cp_path)
         self.motion_decoder = GRUDecoder(mo_dim, aud_embed_dim, lxm_dim, rnn_hid_dim, rnn_out_dim, rnn_depth)
         self.cell_state_init = CellStateInitializer(mo_dim+lxm_dim, rnn_hid_dim, rnn_depth)
 
@@ -68,11 +76,14 @@ class MotionGenerator_RNN(nn.Module):
     def forward(self, aud, mo, lxm,wav):
         """
         aud, mo: [N, D, L]
-        lxm: [N, D, B]. B: num_block
+        lxm: [N, D, B]. 
+        B: num_block
+        L: num_block*Uniform length
+        BL: Uniform length
         """
         N, D, L = aud.shape
         B = lxm.shape[-1]
-        BL = L // B  # BL: block length， Uniform length
+        BL = L // B  # BL: block length，Uniform length
 
         # initialize the hidden state of rnn
         cell_state = self.cell_state_init(mo[:, :, BL-1], lxm[:, :, 0])  # [rnn_layer, N, rnn_hid_dim]
@@ -80,9 +91,21 @@ class MotionGenerator_RNN(nn.Module):
         mo_hat = []  # without the first and the last blocks. element shape: [N, D, 1]
         for b_idx in range(B-2):
             # with torch.no_grad():
-            #     wav_embed_b = self.audio_encoder_wav2vec(wav[:, (b_idx+0)*BL: (b_idx+3)*BL,:])
-            aud_embed_b = self.audio_encoder(aud[:, :, (b_idx+0)*BL: (b_idx+3)*BL])
-            
+            #     wav_clip = wav[:, (b_idx+0)*BL: (b_idx+3)*BL,:].reshape(-1, 800*12)
+            #     z = self.audio_encoder_wav2vec.feature_extractor(wav_clip) # -> [-1,512,58]
+            #     z = F.interpolate(z, size=12, mode='linear', align_corners=False)
+            #     aud_embed_b = rearrange(z, '(b b_num) d t -> b b_num d t',b_num=3)
+            #     # aud_embed_b  = z.reshape(-1,3,z.shape[1],z.shape[2])
+                
+            with torch.no_grad():
+                wav_clip = wav[:, (b_idx+0)*BL: (b_idx+3)*BL,:].reshape(-1, 3*12*800)
+                z = self.audio_encoder_wav2vec.feature_extractor(wav_clip) # -> [-1,512,180-2]
+                z = F.interpolate(z, size=12, mode='linear', align_corners=False)
+                aud_embed_b = rearrange(z, 'b d t -> b t d',)
+                # aud_embed_b  = z.reshape(-1,3,z.shape[1],z.shape[2])
+            # aud_embed_b2 = self.audio_encoder(aud[:, :, (b_idx+0)*BL: (b_idx+3)*BL])
+            aud_embed_b = self.audio_mlp(aud_embed_b).transpose(1,2).contiguous()
+            # aud_embed_b = aud_embed_b
 
             for f in range(BL):  # f: frame
                 # get previous pose
@@ -96,7 +119,7 @@ class MotionGenerator_RNN(nn.Module):
 
                 mo_hat.append(mo_pred.unsqueeze(-1))
 
-        mo_hat = torch.cat(mo_hat, dim=-1)
+l         mo_hat = torch.cat(mo_hat, dim=-1)
 
         return mo_hat
 

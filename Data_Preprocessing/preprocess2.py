@@ -9,10 +9,11 @@ module_path = os.path.dirname(os.path.abspath(__file__))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-from Utils.audio_features import *
+from Utils.audio_features2 import *
+# from Utils.audio_features2 import prepare_audio_feature_vq_wav2vec
 from Utils.motion_features import *
-from Utils.beat_features import *
-from Utils.utils import *
+from Utils.beat_features2 import *
+from Utils.utils2 import *
 
 # endregion
 
@@ -171,7 +172,7 @@ class Preprocessor:
             print("Found data len uniform align result, skip.")
         else:
             os.makedirs(dir_data_len_uniform)
-            _, _, _ = uniform_data_fragment_length_tsm(dir_mel_motion_aligned=dir_mel_motion_aligned,
+            _, _, _,_ = uniform_data_fragment_length_tsm(dir_mel_motion_aligned=dir_mel_motion_aligned,
                                                        dir_onset=dir_onset, dir_wav=dir_wav, names_file=name_files,
                                                        dir_save=dir_data_len_uniform, sr=sr, fps=fps,
                                                        rotation_order=self.config["bvh_rotation_order"],
@@ -212,13 +213,31 @@ class Preprocessor:
         # endregion
         
         
+        # # region Prepare audio feature(Add positional encoding).
+        
+        # print("\nPreparing audio feature vq-wav2vec......")
+        
+        # dir_audio_feat_vq_wav2vec = os.path.join(dir_features, "Audio_Feature_vq-wav2vec")
+        # if os.path.exists(dir_audio_feat_vq_wav2vec):
+        #     print("Found audio feature vq-wav2vec result, skip.")
+        # else:
+        #     os.makedirs(dir_audio_feat_vq_wav2vec)
+        #     _ = prepare_audio_feature_vq_wav2vec(dir_data_len_uniform=dir_data_len_uniform, names_file=name_files, dir_save=dir_audio_feat_vq_wav2vec, uniform_len=self.config["uniform_len"], save=True)
+        # # _ = prepare_audio_feature_vq_wav2vec(dir_data_len_uniform=dir_data_len_uniform, names_file=name_files, dir_save=dir_audio_feat_vq_wav2vec, uniform_len=self.config["uniform_len"], save=True)
+        
+        # # endregion
+        
+
+        
+        
+        
         # region Split dataset.
 
         if self.config["split_data"]:
             print("\nSpliting dataset......")
 
             # Spliting training dataset.
-            _, _, _ = split_dataset(dir_audio_feat=dir_audio_feat, dir_motion_expmap=dir_motion_expmap,
+            _, _, _, _ = split_dataset(dir_audio_feat=dir_audio_feat, dir_motion_expmap=dir_motion_expmap,
                                     dir_data_len_uniform=dir_data_len_uniform,
                                     names_file=name_files_train, dir_save=dir_save,
                                     uniform_len=self.config["uniform_len"],
@@ -227,7 +246,7 @@ class Preprocessor:
                                     save=True)
 
             # Spliting validation dataset.
-            _, _, _ = split_dataset(dir_audio_feat=dir_audio_feat, dir_motion_expmap=dir_motion_expmap,
+            _, _, _, _ = split_dataset(dir_audio_feat=dir_audio_feat, dir_motion_expmap=dir_motion_expmap,
                                     dir_data_len_uniform=dir_data_len_uniform,
                                     names_file=name_files_valid, dir_save=dir_save,
                                     uniform_len=self.config["uniform_len"],

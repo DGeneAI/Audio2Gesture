@@ -209,3 +209,28 @@ def prepare_audio_feature(dir_data_len_uniform: str, names_file: List[str], dir_
     process()
     
     return res
+
+
+if __name__ == '__main__':
+    dir_wav = "/root/project/Audio2Gesture/Data/MOCCA/Processed_4/Training_Data/Features/WAV_Audio"
+    name_files = ["speaker01_clip01", 
+                        "speaker01_clip02",
+                        "speaker01_clip04",
+                        "speaker02_clip01",
+                        "speaker02_clip04",
+                        "speaker02_clip06",
+                        "speaker03_clip01",
+                        "speaker03_clip03",
+                        "speaker03_clip05",
+                        "speaker04_clip01",
+                        "speaker04_clip03",
+                        "speaker04_clip04",
+                        "speaker05_clip01",
+                        "speaker05_clip03",
+                        "speaker05_clip05"]
+
+    fps = 20
+    sr = 48000
+    dir_onset = 'test'
+    detect_onset(dir_loaded_audio=dir_wav, names_file=name_files, dir_save=dir_onset,
+                             fps=fps, sr=sr, bounds=[0.3, 0.6], save=False)

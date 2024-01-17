@@ -1,6 +1,6 @@
 {
     dir_data: "../Data/MOCCA/Source/Training_Data",
-    dir_save: "../Data/MOCCA/Processed_6/Training_Data",
+    dir_save: "../Data/MOCCA/Processed_vqwav2vec/Training_Data",
 
     name_files_train: ["speaker01_clip01", 
                         "speaker01_clip02",
@@ -39,8 +39,8 @@
     sr: 16000,
 
     dim_mel: 80,
-    mel_filter_len: 2400,
-    mel_hop_len: 600,
+    mel_filter_len: 2048,
+    mel_hop_len: 800,
 
     joints_selected: ['Spine', 'Spine1', 'Spine2', 'Spine3', 'Neck', 'Neck1', 'Head', 'RightShoulder', 'RightArm',
         'RightForeArm', 'RightHand', 'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftHand'],

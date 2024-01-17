@@ -1,0 +1,39 @@
+{
+    dir_data: "../Data/MOCCA/Source2/Training_Data",
+    dir_save: "../Data/MOCCA/Processed_vqwav2vec2/Training_Data",
+
+    name_files_train: ["speaker01_clip01", 
+                        "speaker01_clip02",
+                    ],
+
+
+
+    name_files_valid: ["speaker01_clip02",],
+    name_files_test: ["speaker01_clip03",
+                    ],
+
+    fps: 20,
+    sr: 16000,
+
+    dim_mel: 80,
+    mel_filter_len: 2048,
+    mel_hop_len: 800,
+
+    joints_selected: ['Spine', 'Spine1', 'Spine2', 'Spine3', 'Neck', 'Neck1', 'Head', 'RightShoulder', 'RightArm',
+        'RightForeArm', 'RightHand', 'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftHand'],
+
+    onset_bounds: [0.3, 0.6],
+
+    bvh_rotation_order: "ZXY",
+    bvh_root_joint: "Hips", 
+
+    uniform_len: 12,
+
+    use_pos_enc: false,
+    dim_pos_enc : 16,
+
+    split_data: true,
+
+    num_blocks_per_clip: 10,
+    step: 8
+}
