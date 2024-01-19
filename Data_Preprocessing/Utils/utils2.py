@@ -254,9 +254,14 @@ def split_dataset(dir_audio_feat: str, dir_motion_expmap: str, dir_data_len_unif
     res_wav = []
     res_motion = []
     res_index = []
-    
+    res_vid_indices = []
     def process(suffix : str = ""):
+        vid_indic = -1
+        speaker_name = None
         for n in names_file:
+            if speaker_name != n[:9]:
+                vid_indic += 1
+                speaker_name = n[:9]
             index = np.load(os.path.join(dir_data_len_uniform, n + f"_index{suffix}.npy")).astype(int)
             mel = np.load(os.path.join(dir_audio_feat, n + f"{suffix}.npy"))
             
@@ -273,6 +278,7 @@ def split_dataset(dir_audio_feat: str, dir_motion_expmap: str, dir_data_len_unif
             mel_clips = []
             wav_clips = []
             motion_clips = []
+            vid_indic_clips = []
             step_frame = int(uniform_len * step)
             for i in range(0, mel.shape[0], step_frame):
                 if (i + uniform_len * num_blocks_per_clip) <= mel.shape[0]:
@@ -282,16 +288,20 @@ def split_dataset(dir_audio_feat: str, dir_motion_expmap: str, dir_data_len_unif
                     wav_clips.append(wav[int(s*800): int(e*800)])
                     motion_clips.append(motion[s: e, :])
                     index_clips.append(index[int(s / uniform_len): int(e / uniform_len)])
-
+                    vid_indic_clips.append([vid_indic]*num_blocks_per_clip)
+                    
             if len(mel_clips) > 0:
                 res_mel.append(np.array(mel_clips))
                 res_wav.append(np.array(wav_clips))
                 res_motion.append(np.array(motion_clips))
                 res_index.append(np.array(index_clips))
-
+                res_vid_indices.append(np.array(vid_indic_clips))
+                
                 print(n + f"_mel{suffix}:", res_mel[-1].shape)
                 print(n + f"_wav{suffix}:", res_wav[-1].shape)
                 print(n + f"_motion{suffix}:", res_motion[-1].shape)
+                print(n + f"_res_vid_indices{suffix}:", res_vid_indices[-1].shape)
+
     
     process()
     
@@ -299,6 +309,7 @@ def split_dataset(dir_audio_feat: str, dir_motion_expmap: str, dir_data_len_unif
     res_wav = np.concatenate(res_wav, axis=0)
     res_motion = np.concatenate(res_motion, axis=0)
     res_index = np.concatenate(res_index, axis=0).astype(int)  # num_clips X num_blocks.
+    res_vid_indices = np.concatenate(res_vid_indices, axis=0).astype(int)  # num_clips X num_blocks.
     
     assert res_mel.shape[0] == res_motion.shape[0]  # num_clips X time X dim_feat.
     assert res_index.shape[0] == res_mel.shape[0]
@@ -318,7 +329,9 @@ def split_dataset(dir_audio_feat: str, dir_motion_expmap: str, dir_data_len_unif
                  audio=res_mel_normalized,
                  motion=res_motion_normalized,
                  audio_wav = res_wav,
-                 index=res_index)
+                 index=res_index,
+                 vid_indices = res_vid_indices,
+                 )
         if dataset_type == 'train':
             jl.dump(audio_scaler, os.path.join(dir_save, dataset_type + "_audio_scaler.sav"))
             jl.dump(motion_scaler, os.path.join(dir_save, dataset_type + "_motion_scaler.sav"))
@@ -329,10 +342,12 @@ def split_dataset(dir_audio_feat: str, dir_motion_expmap: str, dir_data_len_unif
             f.write(f"Audio wav: {res_wav.shape}\n")
             f.write(f"Motion: {res_motion_normalized.shape}\n")
             f.write(f"Index: {res_index.shape}\n")
+            f.write(f"Vid_indices: {res_vid_indices.shape}\n")
     
     print(f"Audio {dataset_type}:", res_mel_normalized.shape)
     print(f"Audio wav {dataset_type}:", res_wav.shape)
     print(f"Motion {dataset_type}:", res_motion_normalized.shape)
     print(f"Index {dataset_type}:", res_index.shape)
+    print(f"Vid_indices{dataset_type}:", res_vid_indices.shape)
     
-    return res_mel_normalized, res_motion_normalized, res_index, res_wav
+    return res_mel_normalized, res_motion_normalized, res_index, res_wav,res_vid_indices

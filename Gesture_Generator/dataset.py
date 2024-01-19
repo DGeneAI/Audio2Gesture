@@ -20,6 +20,8 @@ class TrainingDataset(Dataset):
         self.motion_feat = data["motion"].astype(np.float32)  # num_clips X time X dim_feat.
         self.index = data["index"].astype(int)  # num_clips X num_blocks.
         self.audio_wav = data["audio_wav"].astype(np.float32)
+        self.vid_indices =  data["vid_indices"].astype(int) 
+        
         if "lexeme" in dict(data).keys():
             self.lexeme = data["lexeme"].astype(np.float32)  # num_clips X num_blocks X dim_feat.
         else:
@@ -31,7 +33,7 @@ class TrainingDataset(Dataset):
             self.lexeme_index = np.zeros((self.index.shape[0], self.index.shape[1])).astype(int)
         
         self.max_index = int(np.max(self.index))
-    
+        
     def __len__(self):
         return self.audio_feat.shape[0]
     
@@ -42,5 +44,6 @@ class TrainingDataset(Dataset):
             "motion": self.motion_feat[idx, :, :],
             "lexeme": self.lexeme[idx, :, :],
             "lexeme_index": self.lexeme_index[idx, :],
-            "index": self.index[idx, :]
+            "index": self.index[idx, :],
+            "vid_indices":self.vid_indices[idx,:]
         }

@@ -106,7 +106,7 @@ class LxmInterpreter(nn.Module):
 
         return logits
 
-    def generate(self, aud, lxm_idx, temperature=1.0, do_sample=False, top_k=None):
+    def generate(self, aud, lxm_idx, wav, temperature=1.0, do_sample=False, top_k=None):
         '''
         aud: [N, L, D]
         lxm_idx: [N, 1]
@@ -118,9 +118,12 @@ class LxmInterpreter(nn.Module):
         logits_pred = []
         for B_idx in range(B):
             aud_cond = aud[:, :(B_idx+1)*BL, :] if B_idx < max_B else aud[:, (B_idx+1-max_B)*BL: (B_idx+1)*BL, :]
+            wav_cond = wav[:, :(B_idx+1)*BL, :] if B_idx < max_B else wav[:, (B_idx+1-max_B)*BL: (B_idx+1)*BL, :]
+            
+            
             lxm_idx_cond = lxm_idx if lxm_idx.shape[-1] <= max_B else lxm_idx[:, -max_B:]
 
-            logits = self(aud_cond, lxm_idx_cond)
+            logits = self(aud_cond, lxm_idx_cond,wav_cond)
             logits = logits[:, -1, :] / temperature
 
             if top_k is not None:

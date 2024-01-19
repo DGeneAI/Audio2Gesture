@@ -14,9 +14,38 @@ sys.path.append('/root/project/Audio2Gesture/')
 from Gesture_Lexicon.model import vqvae1d
 from dataset import *
 from utils import *
-
+import torch.distributions as D
+import torch.nn as nn
 # endregion
 
+
+class KLDivergenceLoss(nn.Module):
+    def __init__(self):
+        super(KLDivergenceLoss, self).__init__()
+
+    def forward(self, z_mu, z_logvar):
+        # 将 z_mu 的形状调整为 [batch_size * num_samples, latent_dim]
+        z_mu_flat = z_mu.view(-1, z_mu.size(-1))
+        
+        # 将 z_logvar 的形状调整为 [batch_size * num_samples, latent_dim]
+        z_logvar_flat = z_logvar.view(-1, z_logvar.size(-1))
+        
+        # 创建正态分布对象
+        q_distribution = D.Normal(z_mu_flat, torch.exp(0.5 * z_logvar_flat))
+        
+        # 创建标准正态分布对象
+        p_distribution = D.Normal(torch.zeros_like(z_mu_flat), torch.ones_like(z_logvar_flat))
+        
+        # 计算 KL 散度
+        kl = D.kl.kl_divergence(q_distribution, p_distribution).sum(dim=-1)
+        
+        # 将 KL 散度损失的形状调整回 [batch_size, num_samples]
+        kl = kl.view(z_mu.size(0), z_mu.size(1))
+        
+        # 对损失进行平均，以防止批次大小对损失的影响
+        kl /= z_mu.size(1)  # 将损失除以样本数
+        
+        return torch.mean(kl)
 
 def compute_prec(net,motion_gt,motion_pred):
     loss_perc = 0
@@ -115,7 +144,7 @@ class Trainer:
         # self.criterion_l1 = torch.nn.SmoothL1Loss()
         self.criterion_l1 = torch.nn.L1Loss()
         self.criterion_l2 = torch.nn.MSELoss()
-        
+        self.criterion_k1loss = KLDivergenceLoss()
         path_pretrained_motion_encoder = r"/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/Checkpoints/trained_model.pth"
         path_config_train_motion_encoder = r"/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/config.json5"
         with open(path_config_train_motion_encoder, "r") as f:
@@ -127,7 +156,7 @@ class Trainer:
         self.motion_encoder.eval()
         
         # endregion
-    
+        self.add_style  = True
     def train(self) -> None:
         print('\nStart training......')
 
@@ -146,7 +175,7 @@ class Trainer:
 
             self.net.train()
             
-            loss_train, loss_rot_train, loss_vel_train, loss_acc_train,loss_perc_train = 0., 0., 0., 0., 0.
+            loss_train, loss_rot_train, loss_vel_train, loss_acc_train,loss_perc_train,loss_style_train = 0., 0., 0., 0., 0., 0.
             counter = 0
 
             # region Data loader loop.
@@ -157,13 +186,14 @@ class Trainer:
                 
                 batch_size = batch["audio"].shape[0]
                 
-                infer_res = infer_train(batch, self.device, self.net,
+                infer_ret = infer_train(batch, self.device, self.net,
                                         self.uniform_len, self.num_blocks,
                                         self.config['network']['name'])
 
-                motion_gt = infer_res[0]
-                motion_pred = infer_res[1]
-                
+                motion_gt = infer_ret['mo_gt']
+                motion_pred = infer_ret['mo_hat']
+                z_mu =  infer_ret['z_mu']
+                z_logvar =  infer_ret['z_logvar']
                 
                 # region Loss and net weights update.
                 
@@ -174,8 +204,12 @@ class Trainer:
                 _,_,_,_,_,z_pred = self.motion_encoder(motion_pred.transpose(1,2))
                 _,_,_,_,_,z_gt = self.motion_encoder(motion_gt.transpose(1,2))
                 loss_perc = self.criterion_l2(z_pred,z_gt)
-                loss = self.config["loss"]["rot"]*loss_rot + self.config["loss"]["vel"]*loss_vel + self.config["loss"]["acc"]*loss_acc +self.config["loss"]["perc"]*loss_perc
                 
+                
+                loss_style = self.criterion_k1loss(z_mu,z_logvar) if self.add_style else 0
+                
+                loss = self.config["loss"]["rot"]*loss_rot + self.config["loss"]["vel"]*loss_vel + self.config["loss"]["acc"]*loss_acc +self.config["loss"]["perc"]*loss_perc \
+                        + self.config["loss"]["style"]*loss_style
                 loss.backward()
                 self.optimizer.step()
                 
@@ -183,6 +217,7 @@ class Trainer:
                 loss_vel_train += loss_vel.item() * batch_size * self.config["loss"]["vel"]
                 loss_acc_train += loss_acc.item() * batch_size * self.config["loss"]["acc"]
                 loss_perc_train += loss_perc.item() * batch_size * self.config["loss"]["perc"]
+                loss_style_train += loss_style.item() * batch_size * self.config["loss"]["style"]
                 loss_train += loss.item() * batch_size
                 
                 counter += batch_size
@@ -208,6 +243,7 @@ class Trainer:
             loss_vel_train /= counter
             loss_acc_train /= counter
             loss_perc_train /= counter
+            loss_style_train /= counter
             loss_train /= counter
             
             print('Training',
@@ -216,6 +252,7 @@ class Trainer:
                   f'Vel Loss: {loss_vel_train:.4f} /',
                   f'Acc Loss: {loss_acc_train:.4f} /',
                   f'Perc Loss: {loss_perc_train:.4f} /',
+                  f'Style Loss: {loss_style_train:.4f} /',
                   )
 
             self.writer.add_scalar("Loss/Train", loss_train, epoch)
@@ -223,6 +260,7 @@ class Trainer:
             self.writer.add_scalar("Vel_Loss/Train", loss_vel_train, epoch)
             self.writer.add_scalar("Acc_Loss/Train", loss_acc_train, epoch)
             self.writer.add_scalar("Perc_Loss/Train", loss_perc_train, epoch)
+            self.writer.add_scalar("Style_Loss/Train", loss_style_train, epoch)
             
             # endregion
             
@@ -242,20 +280,22 @@ class Trainer:
             if epoch % valid_num_epoch == 0:
                 self.net.eval()
                 
-                loss_valid, loss_rot_valid, loss_vel_valid, loss_acc_valid, loss_perc_valid = 0., 0., 0., 0., 0.
+                loss_valid, loss_rot_valid, loss_vel_valid, loss_acc_valid, loss_perc_valid, loss_style_valid = 0., 0., 0., 0., 0., 0.
                 counter = 0
                 
                 with torch.no_grad():
                     for _, batch in enumerate(self.data_loader_val):
                         batch_size = batch["audio"].shape[0]
 
-                        infer_res = infer_train(batch, self.device, self.net,
+                        infer_ret= infer_train(batch, self.device, self.net,
                                                 self.uniform_len, self.num_blocks,
                                                 self.config['network']['name'])
 
-                        motion_gt = infer_res[0]
-                        motion_pred = infer_res[1]
+                        motion_gt = infer_ret['mo_gt']
+                        motion_pred = infer_ret['mo_hat']
                         
+                        z_mu =  infer_ret['z_mu']
+                        z_logvar =  infer_ret['z_logvar']
                         
                         # region Loss and net weights update.
                 
@@ -269,13 +309,18 @@ class Trainer:
                         _,_,_,_,_,z_pred = self.motion_encoder(motion_pred.transpose(1,2))
                         _,_,_,_,_,z_gt = self.motion_encoder(motion_gt.transpose(1,2))
                         loss_perc = self.criterion_l2(z_pred,z_gt)
+                        
+                        loss_style = self.criterion_k1loss(z_mu,z_logvar) if self.add_style else 0
+                        
                         loss = self.config["loss"]["rot"] * loss_rot + self.config["loss"]["vel"] * loss_vel + \
-                               self.config["loss"]["acc"] * loss_acc + self.config["loss"]["perc"] * loss_perc
+                               self.config["loss"]["acc"] * loss_acc + self.config["loss"]["perc"] * loss_perc + \
+                               self.config["loss"]["style"] * loss_style
 
                         loss_rot_valid += loss_rot.item() * batch_size * self.config["loss"]["rot"]
                         loss_vel_valid += loss_vel.item() * batch_size * self.config["loss"]["vel"]
                         loss_acc_valid += loss_acc.item() * batch_size * self.config["loss"]["acc"]
                         loss_perc_valid += loss_perc.item() * batch_size * self.config["loss"]["perc"]
+                        loss_style_valid += loss_style.item() * batch_size * self.config["loss"]["style"]
                         loss_valid += loss.item() * batch_size
                         
                         counter += batch_size
@@ -289,6 +334,7 @@ class Trainer:
                 loss_vel_valid /= counter
                 loss_acc_valid /= counter
                 loss_perc_valid /= counter
+                loss_style_valid /= counter
                 loss_valid /= counter
 
                 print('Validation',
@@ -297,6 +343,7 @@ class Trainer:
                       f'Vel Loss: {loss_vel_valid:.4f} /',
                       f'Acc Loss: {loss_acc_valid:.4f} /',
                       f'Perc Loss: {loss_perc_valid:.4f} /',
+                      f'Style Loss: {loss_style_valid:.4f} /',
                       )
 
                 self.writer.add_scalar("Loss/Valid", loss_valid, epoch)
@@ -304,6 +351,7 @@ class Trainer:
                 self.writer.add_scalar("Vel_Loss/Valid", loss_vel_valid, epoch)
                 self.writer.add_scalar("Acc_Loss/Valid", loss_acc_valid, epoch)
                 self.writer.add_scalar("Perc_Loss/Valid", loss_perc_valid, epoch)
+                self.writer.add_scalar("Style_Loss/Valid", loss_style_valid, epoch)
                 
                 # endregion
             

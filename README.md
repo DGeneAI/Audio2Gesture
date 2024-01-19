@@ -3,16 +3,20 @@
 This is a reproduced PyTorch/GPU implementation of the paper [Rhythmic Gesticulator: Rhythm-Aware Co-Speech Gesture Synthesis with Hierarchical Neural Embeddings](https://pku-mocca.github.io/Rhythmic-Gesticulator-Page/) by *[Ironieser](https://github.com/Ironeiser)*.  
 ### 🚩Feature 
 - &#x2705;  Add VQ-VAE for gesture lexicon.  
-   - Working on improve performance
 - &#x2705;  Improve data preprocess
+- &#x2705;  Add *L_perc* and *L_z*(for style control)
+- &#x2705;  Add perceptual loss
+- &#x2705; Use vq-wav2vec as audio encoder
 - &#x231B;  leverage Gumbel-softmax to convert a latent code into a codebook vector
-- &#x231B;  Add style code
 - More coming soon.
 ###  🐛 Existing bug 
 - 💥  The official  open-source code for the **gesture generator model** collapsed.
-- 💥  The official  open-source code for the **Audio Encoder** does not use pre-trained encoder which is vq-wav2vec has L=8 conv layers. And do not finu-tine audio encoder with text using contrastive learning strategy.
+
 - 💥 The official  open-source code for the **Motion Encoder** of  **gesture generator model**  is missing.
-- 💥 There is only on loss of reconstructive loss when training the gesture generator. Three loss functions are not provided, which are *L_perc*, *L_lexeme* and *L_z*(for style control). 
+- 💥 There is only on loss of reconstructive loss when training the gesture generator. Three loss functions are not provided, which is *L_perc*, *L_lexeme* and *L_z*(for style control). 
+### 🐛 Fixed Bug
+- &#x2705; The official  open-source code for the **Audio Encoder** does not use pre-trained encoder which is vq-wav2vec has L=8 conv layers. And do not finu-tine audio encoder with text using contrastive learning strategy.
+- &#x2705; There is only on loss of reconstructive loss when training the gesture generator. Three loss functions are not provided, which is *L_perc*, *L_lexeme* and *L_z*(for style control).   
 
 This version is based on [Trinity Speech-Gesture Dataset (GENEA Challenge 2020)](https://trinityspeechgesture.scss.tcd.ie/) and  [MOCCA Gesture Dataset](https://github.com/Aubrey-ao/HumanBehaviorAnimation/tree/main/HumanBehaviorAnimation/RhythmicGesticulator/MOCCA_Gesture_Dataset).
 If want to get better performances of motion quality and speech generalization, you can try to train the system with bigger datasets like [BEAT Dataset](https://github.com/PantoMatrix/BEAT).

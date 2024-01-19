@@ -27,7 +27,7 @@ __all__ = ["build_lexicon", "predict_lexeme"]
 def get_args_parser():
     parser = argparse.ArgumentParser('gesture lexicon', add_help=False)
 
-    parser.add_argument('--data_dir', type=str, default = "../Data/MOCCA/Processed_vqwav2vec2/Training_Data",)
+    parser.add_argument('--data_dir', type=str, default = "../Data/MOCCA/Processed_vqwav2vec/Training_Data",)
     
     # 50*192， 
     # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_150115/Checkpoints/trained_model.pth",)

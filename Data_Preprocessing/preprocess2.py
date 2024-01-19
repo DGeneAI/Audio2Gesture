@@ -237,7 +237,7 @@ class Preprocessor:
             print("\nSpliting dataset......")
 
             # Spliting training dataset.
-            _, _, _, _ = split_dataset(dir_audio_feat=dir_audio_feat, dir_motion_expmap=dir_motion_expmap,
+            _, _, _, _,_ = split_dataset(dir_audio_feat=dir_audio_feat, dir_motion_expmap=dir_motion_expmap,
                                     dir_data_len_uniform=dir_data_len_uniform,
                                     names_file=name_files_train, dir_save=dir_save,
                                     uniform_len=self.config["uniform_len"],
@@ -246,7 +246,7 @@ class Preprocessor:
                                     save=True)
 
             # Spliting validation dataset.
-            _, _, _, _ = split_dataset(dir_audio_feat=dir_audio_feat, dir_motion_expmap=dir_motion_expmap,
+            _, _, _, _,_ = split_dataset(dir_audio_feat=dir_audio_feat, dir_motion_expmap=dir_motion_expmap,
                                     dir_data_len_uniform=dir_data_len_uniform,
                                     names_file=name_files_valid, dir_save=dir_save,
                                     uniform_len=self.config["uniform_len"],
