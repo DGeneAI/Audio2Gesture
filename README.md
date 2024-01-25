@@ -22,9 +22,9 @@ This version is based on [Trinity Speech-Gesture Dataset (GENEA Challenge 2020)]
 If want to get better performances of motion quality and speech generalization, you can try to train the system with bigger datasets like [BEAT Dataset](https://github.com/PantoMatrix/BEAT).
 
 ### Install
+This section is completely following the original repository; please refer to it. But if you find some package is not install, please manully install it. You may need install： einops   
 
 Install the conda package manager from https://docs.conda.io/en/latest/miniconda.html.
-
 ``` shell
 cd HumanBehaviorAnimation/RhythmicGesticulator/Simplified_Version
 conda env create -f environment.yaml
@@ -32,12 +32,76 @@ conda activate rhyGes_simple
 conda install pytorch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 cudatoolkit=11.3 -c pytorch
 ```
 
-#### vq-wav2vec
+
+### vq-wav2vec
 
 Install vq-wav2vec refer to https://github.com/facebookresearch/fairseq/blob/main/examples/wav2vec/README.md
 
 install fairseq and download the ckpt, save to ```./checkpoint/wav2vec/vq-wav2vec.pt```
 
+
+### Reproduce my best result
+
+1. Prepare the Trinity dataset.
+- Option A: Download and unzip the processed data (Preparing). [Processed Trinity Data (BaiduDisk Extraction Code: mvur)](https://pan.baidu.com/s/1fjNXMrIf7Zdrl8jP2g_lNA?pwd=mvur) 
+- Option B: Download the Trinity dataset from official site and place them into the corresponding path. Refer to [Training/dataset/](#Dataset)
+  ```sh
+  cd Data_Preprocessing
+  python preprocess2.py ./Config/Trinity/config_vae2.json5
+  ```
+2. Place the data into `./Data/Trinity`. Finally, the training data can be found at `./Data/Trinity/Processed_vqwav2vec/Training_Data/train.npz`.
+3. Download the checkpoints [(BaiduDisk Extraction Code: aiqy)](https://pan.baidu.com/s/1LuNMhZc-DAHKMfMGKvpnSA?pwd=aiqy) and configuration files for `Gesture_Generator` and `Lexeme_Interpreter`. 
+   Then,
+   ```sh
+   mkdir ./Gesture_Generator/Training/Trinity/
+   mkdir ./Lexeme_Interpreter/Training/Trinity/
+   ```
+   Put the checkpoints in the corresponding paths. Finally, the files should be placed as shown below.
+   ```
+   Gesture_Generator: ./Gesture_Generator/Training/Trinity/_RNN_20240124_130542
+   Lexeme_Interpreter: ./Lexeme_Interpreter/Training/Trinity/_LxmInterpreter_20240125_113601
+   ```
+
+4. Hence, we could use the args as below:
+  ```
+  --gen_checkpoint_path /root/project/Audio2Gesture/Gesture_Generator/Training/Trinity/_RNN_20240124_130542/Checkpoints/trained_model.pth \
+  --gen_checkpoint_config /root/project/Audio2Gesture/Gesture_Generator/Training/Trinity/_RNN_20240124_130542/config.json5 \
+  --lxm_intp_checkpoint_path /root/project/Audio2Gesture/Lexeme_Interpreter/Training/Trinity/_LxmInterpreter_20240125_113601/Checkpoints/checkpoint_0k200.pth\
+  --lxm_intp_checkpoint_config /root/project/Audio2Gesture/Lexeme_Interpreter/Training/Trinity/_LxmInterpreter_20240125_113601/config.json5 \
+  ```
+5. Infer
+Refer to [Sample](#sample).  I have set the shell script，just run it.
+Note: You need put the test audio file {audio_file} (in .wav format) into a directory ```./test_vqvae_trinity``` , (or built by yourself, then revise the script), and run the script to generate gestures:
+  ```sh
+  cd /path/to/project_root
+  ./generator_vqvae2.sh
+  ```
+6. Rerun the experiments
+  ```sh
+  # Step 1
+  cd Gesture_Lexicon
+  python train.py ./Config/Trinity/config_vqvae1d_10.json5
+
+  # WARNING: YOU MUST NEED TO ADJUST THE ARGS OF lexicon_vqvae.py BEFORE YOU RUN IT, WHICH ARE 
+  # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/Trinity/_vqvae1d_20240123_104647/Checkpoints/trained_model.pth",)
+  # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/Trinity/_vqvae1d_20240123_104647/config.json5")
+  python lexicon_vqvae.py --save --checkpoint_path the_ckpt_path --checkpoint_config the_config_path
+
+  # Step 2
+  cd Gesture_Generator
+  python train2.py ./Config/Trinity/config_vqvae2.json5
+  # Step 3
+  cd Lexeme_Interpreter
+  python train2.py ./Config/Trinity/config_vqvae2.json5
+  # Infer
+  # Run TensorBoard
+  cd Gesture_Lexicon
+  tensorboard --logdir ./Training/ --port 6006
+  cd Gesture_Generator
+  tensorboard --logdir ./Training/ --port 6007
+  cd Lexeme_Interpreter
+  tensorboard --logdir ./Training/ --port 6008
+  ```
 ### Sample
 
 Download the pretrained source from [Google Drive](https://drive.google.com/file/d/1oIbZygcHivxWcRkIki3zis6LhCklpm8L/view?usp=sharing) and put the .zip file into the root directory of this project. Then, run the script to automatically process the pretrained source:
@@ -61,6 +125,7 @@ CUDA_VISIBLE_DEVICES={gpu} python generate.py \
 --device cuda:0 \
 --save_dir path/{data_dir}  # The directory of saving the generated motion, which usually equals to the directory of the test audio file.
 ```
+
 
 ### Training
 
