@@ -43,7 +43,7 @@ install fairseq and download the ckpt, save to ```./checkpoint/wav2vec/vq-wav2ve
 ### Reproduce my best result
 
 1. Prepare the Trinity dataset.
-- Option A: Download and unzip the processed data (Preparing). [Processed Trinity Data (BaiduDisk Extraction Code: mvur)](https://pan.baidu.com/s/1fjNXMrIf7Zdrl8jP2g_lNA?pwd=mvur) 
+- Option A: Download and unzip the processed data. [Processed Trinity Data (BaiduDisk Extraction Code: mvur)](https://pan.baidu.com/s/1fjNXMrIf7Zdrl8jP2g_lNA?pwd=mvur) 
 - Option B: Download the Trinity dataset from official site and place them into the corresponding path. Refer to [Training/dataset/](#Dataset)
   ```sh
   cd Data_Preprocessing
@@ -94,6 +94,8 @@ Note: You need put the test audio file {audio_file} (in .wav format) into a dire
   cd Lexeme_Interpreter
   python train2.py ./Config/Trinity/config_vqvae2.json5
   # Infer
+  cd project_root
+  ./generator_vqvae2.sh
   # Run TensorBoard
   cd Gesture_Lexicon
   tensorboard --logdir ./Training/ --port 6006
