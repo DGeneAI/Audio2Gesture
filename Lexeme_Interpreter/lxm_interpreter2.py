@@ -89,9 +89,13 @@ class LxmInterpreter(nn.Module):
 
 
         # aud_embed = self.encoder_embed(aud)
-        z = self.audio_encoder_wav2vec.feature_extractor(wav.reshape(-1,800))
-        z = F.interpolate(z, size=1, mode='mean', align_corners=False).squeeze()
-        aud_embed = rearrange(z, '(b t) d -> b t d', t=120)
+        with torch.no_grad():
+            z = self.audio_encoder_wav2vec.feature_extractor(wav.reshape(-1,BL*800))
+        z = F.interpolate(z, size=BL, mode='linear', align_corners=False)
+        # z = z.mean(dim=-1)
+        # aud_embed = rearrange(z, '(b t) d -> b t d', t= wav.shape[1])
+        aud_embed = rearrange(z, '(b block) d t -> b (block t) d', block = B ,t=BL, d =512)
+        aud_embed = self.audio_mlp(aud_embed)
         aud_embed = self.encoder_pos_embed(aud_embed)
 
         lxm_embed = self.decoder_embed(lxm_idx)  # [N, B, D]

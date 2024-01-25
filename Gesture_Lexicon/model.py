@@ -510,10 +510,10 @@ class vqvae1d(nn.Module):
         self.embedding_dim = embedding_dim
         self.num_embeddings = num_embeddings
         self.share_code_vq = share
-        self.uniform_length = 12
-        self.encoder = Encoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens,uniform_length=self.uniform_length)
+        self.uniform_length = 10
+        self.encoder = Encoder(self.in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens,uniform_length=self.uniform_length)
         self.vq_layer = VectorQuantizerEMA(embedding_dim, num_embeddings, commitment_cost, vq_cost,decay)
-        self.decoder = Decoder(in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens,uniform_length=self.uniform_length)
+        self.decoder = Decoder(self.in_dim, embedding_dim, num_hiddens, num_residual_layers, num_residual_hiddens,uniform_length=self.uniform_length)
 
         self.apply(self._init_weights)
 

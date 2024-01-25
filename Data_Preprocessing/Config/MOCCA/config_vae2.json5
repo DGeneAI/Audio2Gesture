@@ -6,33 +6,44 @@
                         "speaker01_clip02",
                         "speaker01_clip04",
                         "speaker02_clip01",
+                        "speaker02_clip02",
                         "speaker02_clip04",
+                        "speaker02_clip05",
                         "speaker02_clip06",
+
                         "speaker03_clip01",
+                        "speaker03_clip02",
                         "speaker03_clip03",
+                        "speaker03_clip04",
                         "speaker03_clip05",
+                        "speaker03_clip06",
+
                         "speaker04_clip01",
+                        "speaker04_clip02",
                         "speaker04_clip03",
                         "speaker04_clip04",
+
                         "speaker05_clip01",
+                        "speaker05_clip02",
                         "speaker05_clip03",
-                        "speaker05_clip05"],
+                        "speaker05_clip04",
+                        "speaker05_clip05"，
+                    ],
 
 
 
     name_files_valid: ["speaker03_clip07","speaker02_clip03",],
     name_files_test: ["speaker01_clip03",
-                        "speaker02_clip02",
-                        "speaker02_clip05",
+                        
                         "speaker02_clip07",
-                        "speaker03_clip02",
-                        "speaker03_clip04",
-                        "speaker03_clip06",
+                        
+                       
+                        
                         "speaker03_clip08",
-                        "speaker04_clip02",
+                        
                         "speaker04_clip05",
-                        "speaker05_clip02",
-                        "speaker05_clip04",
+                        
+                        
                         "speaker05_clip06"],
 
     fps: 20,

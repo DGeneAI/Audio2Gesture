@@ -1,7 +1,7 @@
 {
-    dir_data: "../Data/MOCCA/Processed_vqwav2vec/Training_Data",
+    dir_data: "../Data/Trinity/Processed_vqwav2vec/Training_Data",
     
-    dir_log: "./Training/MOCCA",
+    dir_log: "./Training/Trinity",
 
     device: "cuda:0",
     batch_size: 128,

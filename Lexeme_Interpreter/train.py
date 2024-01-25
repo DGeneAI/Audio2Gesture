@@ -135,7 +135,7 @@ class Trainer:
                 
                 aud = batch["audio"].to(self.device)  # [N, L, D].
                 wav = batch["audio_wav"].to(self.device)
-                wav = rearrange(wav, 'n (block uni_len hop) -> n (block uni_len) hop', block=10, uni_len=12)  # [N, 10*12 , 800]
+                wav = rearrange(wav, 'n (block uni_len hop) -> n (block uni_len) hop', block=10, hop=800)  # [N, 10*12 , 800]
                 lxm_idx = batch["lexeme_index"].long().to(self.device)  # [N, B].
 
                 N = aud.shape[0]

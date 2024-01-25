@@ -256,12 +256,17 @@ def split_dataset(dir_audio_feat: str, dir_motion_expmap: str, dir_data_len_unif
     res_index = []
     res_vid_indices = []
     def process(suffix : str = ""):
-        vid_indic = -1
+        # vid_indic = -1
+        vid_indic = 0
         speaker_name = None
         for n in names_file:
-            if speaker_name != n[:9]:
-                vid_indic += 1
-                speaker_name = n[:9]
+            # if 'Trinity' in dir_data_len_uniform:
+            #     vid_indic = 0
+            # elif speaker_name != n[:9]:
+            #     vid_indic += 1
+            #     speaker_name = n[:9]
+            # else:
+                
             index = np.load(os.path.join(dir_data_len_uniform, n + f"_index{suffix}.npy")).astype(int)
             mel = np.load(os.path.join(dir_audio_feat, n + f"{suffix}.npy"))
             

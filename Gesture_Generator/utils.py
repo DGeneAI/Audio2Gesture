@@ -12,7 +12,7 @@ def infer_train(batch, device, net, uniform_len, num_blocks, name_net):
     if name_net == "RNN":
         aud = batch["audio"].to(device)  # [N, L, D]
         wav = batch["audio_wav"].to(device) # [N, 10*12*800]
-        wav = rearrange(wav, 'n (block uni_len hop) -> n (block uni_len) hop', block=10, uni_len=12) # [N, 10, 12*800]
+        wav = rearrange(wav, 'n (block uni_len hop) -> n (block uni_len) hop', block=10, hop=800) # [N, 10, 12*800]
         mo = batch["motion"].to(device)  # [N, L, D]
         lxm = batch["lexeme"].to(device)  # [N, B, D]
         vid_indices = batch["vid_indices"].to(device) 

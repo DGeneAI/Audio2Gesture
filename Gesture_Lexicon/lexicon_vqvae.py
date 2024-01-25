@@ -27,7 +27,8 @@ __all__ = ["build_lexicon", "predict_lexeme"]
 def get_args_parser():
     parser = argparse.ArgumentParser('gesture lexicon', add_help=False)
 
-    parser.add_argument('--data_dir', type=str, default = "../Data/MOCCA/Processed_vqwav2vec/Training_Data",)
+    # parser.add_argument('--data_dir', type=str, default = "../Data/MOCCA/Processed_vqwav2vec/Training_Data",)
+    parser.add_argument('--data_dir', type=str, default = "../Data/Trinity/Processed_vqwav2vec/Training_Data",)
     
     # 50*192， 
     # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231206_150115/Checkpoints/trained_model.pth",)
@@ -46,12 +47,19 @@ def get_args_parser():
     # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231211_133715/config.json5")
     
     # 512*2048
-    parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/Checkpoints/trained_model.pth",)
-    parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/config.json5")
+    # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/Checkpoints/trained_model.pth",)
+    # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/config.json5")
+    # 512*2048
+    # parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/Trinity/_vqvae1d_20240119_185729/Checkpoints/trained_model.pth",)
+    # parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/Trinity/_vqvae1d_20240119_185729/config.json5")
+    # 50*192
+    parser.add_argument('--checkpoint_path', type=str, default = "/root/project/Audio2Gesture/Gesture_Lexicon/Training/Trinity/_vqvae1d_20240123_104647/Checkpoints/trained_model.pth",)
+    parser.add_argument('--checkpoint_config', type=str, default= "/root/project/Audio2Gesture/Gesture_Lexicon/Training/Trinity/_vqvae1d_20240123_104647/config.json5")
     
     
-    parser.add_argument('--lexicon_size', type=int,default=2048)
-    parser.add_argument('--num_kmeans_rerun', type=int, default=512)
+    
+    parser.add_argument('--lexicon_size', type=int,default=192)
+    parser.add_argument('--num_kmeans_rerun', type=int, default=50)
     
     parser.add_argument('--device', type=str, default='cuda:0')
     parser.add_argument('--save', action='store_true')

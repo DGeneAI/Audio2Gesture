@@ -145,8 +145,10 @@ class Trainer:
         self.criterion_l1 = torch.nn.L1Loss()
         self.criterion_l2 = torch.nn.MSELoss()
         self.criterion_k1loss = KLDivergenceLoss()
-        path_pretrained_motion_encoder = r"/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/Checkpoints/trained_model.pth"
-        path_config_train_motion_encoder = r"/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/config.json5"
+        # path_pretrained_motion_encoder = r"/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/Checkpoints/trained_model.pth"
+        # path_config_train_motion_encoder = r"/root/project/Audio2Gesture/Gesture_Lexicon/Training/MOCCA/_vqvae1d_20231213_105041/config.json5"
+        path_pretrained_motion_encoder = r"/root/project/Audio2Gesture/Gesture_Lexicon/Training/Trinity/_vqvae1d_20240123_104647/Checkpoints/trained_model.pth"
+        path_config_train_motion_encoder = r"/root/project/Audio2Gesture/Gesture_Lexicon/Training/Trinity/_vqvae1d_20240123_104647/config.json5"
         with open(path_config_train_motion_encoder, "r") as f:
             self.motion_encoder_config = json5.load(f)
             

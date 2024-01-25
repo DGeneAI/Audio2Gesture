@@ -116,9 +116,9 @@ class MotionGenerator_RNN(nn.Module):
             #     # aud_embed_b  = z.reshape(-1,3,z.shape[1],z.shape[2])
                 
             with torch.no_grad():
-                wav_clip = wav[:, (b_idx+0)*BL: (b_idx+3)*BL,:].reshape(-1, 3*12*800)
+                wav_clip = wav[:, (b_idx+0)*BL: (b_idx+3)*BL,:].reshape(-1, 3*BL*800)
                 z = self.audio_encoder_wav2vec.feature_extractor(wav_clip) # -> [-1,512,180-2]
-                z = F.interpolate(z, size=12, mode='linear', align_corners=False)
+                z = F.interpolate(z, size=BL, mode='linear', align_corners=False)
                 aud_embed_b = rearrange(z, 'b d t -> b t d',)
 
 

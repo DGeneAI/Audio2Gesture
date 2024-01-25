@@ -16,6 +16,8 @@ Pretrained_Source.zip
 output_cctv.wav
 Gesture_Lexicon/Training/Trinity/Conv1d/Checkpoints/trained_model.pth
 Gesture_Lexicon/Training/Trinity/Transformer/Checkpoints/trained_model.pth
+test_audio_motion_vqvae
+test_vqvae_trinity
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
