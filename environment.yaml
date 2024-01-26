@@ -23,3 +23,6 @@ dependencies:
       - opencv-python==4.5.5.64
       - pyloudnorm==0.1.1
       - omegaconf==2.3.0
+      - einops
+      - python_speech_features
+      - fairseq

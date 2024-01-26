@@ -45,6 +45,7 @@ class Inference:
             self.lxm_intp_cfg = OmegaConf.create(json5.load(f))
 
         split_path = self.gen_cfg.dir_data.split(os.path.sep)
+        # print(split_path)
         self.dataset_dir = os.path.join('.', *split_path[split_path.index('Data'):])
         with open(os.path.join(self.dataset_dir, 'config.json5'), 'r') as f:
             self.data_cfg = OmegaConf.create(json5.load(f))

@@ -22,7 +22,7 @@ This version is based on [Trinity Speech-Gesture Dataset (GENEA Challenge 2020)]
 If want to get better performances of motion quality and speech generalization, you can try to train the system with bigger datasets like [BEAT Dataset](https://github.com/PantoMatrix/BEAT).
 
 ### Install
-This section is completely following the original repository; please refer to it. But if you find some package is not install, please manully install it. You may need install： einops   
+This section is completely following the original repository; please refer to it. But if you find some package is not install, please manully install it. You may need install： einops  ,python_speech_features
 
 Install the conda package manager from https://docs.conda.io/en/latest/miniconda.html.
 ``` shell
